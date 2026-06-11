@@ -10,6 +10,7 @@
         <el-menu mode="horizontal" :ellipsis="false" router>
           <el-menu-item index="/">首页</el-menu-item>
           <el-menu-item index="/category">分类</el-menu-item>
+          <el-menu-item index="/user/profile" v-if="userStore.token">我的书架</el-menu-item>
           <el-menu-item index="/admin" v-if="userStore.token && userStore.user.role === 'ADMIN'">后台管理</el-menu-item>
         </el-menu>
       </div>
