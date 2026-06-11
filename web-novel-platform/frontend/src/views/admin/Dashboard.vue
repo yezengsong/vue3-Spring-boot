@@ -339,10 +339,16 @@ async function loadChapters() {
   }
   loading.value = true
   try {
+    console.log('请求章节列表，小说 ID:', novel.id)
     const res = await request.get(`/novel/${novel.id}/chapters`)
+    console.log('章节列表响应:', res)
     chapterList.value = res.data || res
+    if (chapterList.value.length === 0) {
+      ElMessage.info('该小说暂无章节')
+    }
   } catch (error) {
     console.error('加载章节列表失败:', error)
+    ElMessage.error('加载章节失败：' + (error.message || '未知错误'))
   } finally {
     loading.value = false
   }
@@ -476,10 +482,19 @@ async function loadComments() {
   }
   loading.value = true
   try {
+    console.log('请求评论列表，小说 ID:', novel.id)
     const res = await request.get(`/admin/novel/${novel.id}/comments`)
+    console.log('评论列表响应:', res)
     commentList.value = res.data || res
+    if (commentList.value.length === 0) {
+      ElMessage.info('该小说暂无评论')
+    }
   } catch (error) {
     console.error('加载评论列表失败:', error)
+    const errorMsg = error.response ? 
+      `错误 ${error.response.status}: ${error.response.data?.message || error.response.statusText}` : 
+      error.message
+    ElMessage.error('加载评论失败：' + errorMsg)
   } finally {
     loading.value = false
   }
