@@ -339,16 +339,27 @@ async function loadChapters() {
   }
   loading.value = true
   try {
-    console.log('请求章节列表，小说 ID:', novel.id)
+    console.log('=== 请求章节列表 ===')
+    console.log('小说 ID:', novel.id)
+    console.log('请求 URL:', `/novel/${novel.id}/chapters`)
     const res = await request.get(`/novel/${novel.id}/chapters`)
-    console.log('章节列表响应:', res)
+    console.log('=== 章节列表响应 ===')
+    console.log('响应数据:', res)
+    console.log('res.data:', res.data)
+    console.log('res:', res)
     chapterList.value = res.data || res
+    console.log('章节列表:', chapterList.value)
     if (chapterList.value.length === 0) {
       ElMessage.info('该小说暂无章节')
+    } else {
+      ElMessage.success(`加载到 ${chapterList.value.length} 个章节`)
     }
   } catch (error) {
-    console.error('加载章节列表失败:', error)
-    ElMessage.error('加载章节失败：' + (error.message || '未知错误'))
+    console.error('=== 加载章节列表失败 ===')
+    console.error('错误对象:', error)
+    console.error('错误响应:', error.response)
+    console.error('错误消息:', error.message)
+    ElMessage.error('加载章节失败：' + (error.response?.data?.message || error.message || '未知错误'))
   } finally {
     loading.value = false
   }
@@ -482,15 +493,25 @@ async function loadComments() {
   }
   loading.value = true
   try {
-    console.log('请求评论列表，小说 ID:', novel.id)
+    console.log('=== 请求评论列表 ===')
+    console.log('小说 ID:', novel.id)
+    console.log('请求 URL:', `/admin/novel/${novel.id}/comments`)
     const res = await request.get(`/admin/novel/${novel.id}/comments`)
-    console.log('评论列表响应:', res)
+    console.log('=== 评论列表响应 ===')
+    console.log('响应数据:', res)
+    console.log('res.data:', res.data)
     commentList.value = res.data || res
+    console.log('评论列表:', commentList.value)
     if (commentList.value.length === 0) {
       ElMessage.info('该小说暂无评论')
+    } else {
+      ElMessage.success(`加载到 ${commentList.value.length} 条评论`)
     }
   } catch (error) {
-    console.error('加载评论列表失败:', error)
+    console.error('=== 加载评论列表失败 ===')
+    console.error('错误对象:', error)
+    console.error('错误响应:', error.response)
+    console.error('错误消息:', error.message)
     const errorMsg = error.response ? 
       `错误 ${error.response.status}: ${error.response.data?.message || error.response.statusText}` : 
       error.message

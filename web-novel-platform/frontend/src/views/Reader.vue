@@ -3,12 +3,12 @@
     <!-- 顶部工具栏 -->
     <div class="reader-toolbar" v-show="showToolbar">
       <div class="toolbar-content">
-        <el-button @click="$router.back()">
+        <el-button @click="goBackToNovelDetail">
           <el-icon><ArrowLeft /></el-icon>
           返回
         </el-button>
         <div class="chapter-nav">
-          <el-button :disabled="!chapter.prevChapterId" @click="goToChapter(chapter.prevChapterId)">
+          <el-button :disabled="!chapter?.prevChapterId" @click="goToChapter(chapter?.prevChapterId)">
             上一章
           </el-button>
           <el-select v-model="currentChapterId" @change="goToChapter($event)" style="width: 300px">
@@ -19,7 +19,7 @@
               :value="c.id"
             />
           </el-select>
-          <el-button :disabled="!chapter.nextChapterId" @click="goToChapter(chapter.nextChapterId)">
+          <el-button :disabled="!chapter?.nextChapterId" @click="goToChapter(chapter?.nextChapterId)">
             下一章
           </el-button>
         </div>
@@ -32,15 +32,15 @@
     </div>
 
     <!-- 阅读区域 -->
-    <div class="reader-content" :class="{ 'dark-theme': isDark }" @click="toggleToolbar">
-      <div class="chapter-container" v-loading="loading">
+    <div class="reader-content" :class="{ 'dark-theme': isDark }">
+      <div class="chapter-container" v-loading="loading" @click="toggleToolbar">
         <h1 class="chapter-title">{{ chapter.title }}</h1>
         <div class="chapter-text" v-html="formattedContent"></div>
         <div class="chapter-nav-bottom">
-          <el-button :disabled="!chapter.prevChapterId" @click.stop="goToChapter(chapter.prevChapterId)">
+          <el-button :disabled="!chapter?.prevChapterId" @click.stop="goToChapter(chapter?.prevChapterId)">
             上一章
           </el-button>
-          <el-button :disabled="!chapter.nextChapterId" @click.stop="goToChapter(chapter.nextChapterId)">
+          <el-button :disabled="!chapter?.nextChapterId" @click.stop="goToChapter(chapter?.nextChapterId)">
             下一章
           </el-button>
         </div>
@@ -117,6 +117,15 @@ onMounted(async () => {
   await loadComments()
 })
 
+// 监听路由变化，自动刷新章节内容
+watch(() => route.params.chapterId, async (newChapterId) => {
+  if (newChapterId && newChapterId !== chapter.value?.id?.toString()) {
+    currentChapterId.value = Number(newChapterId)
+    await loadChapterContent()
+    await loadComments()
+  }
+})
+
 async function loadChapterContent() {
   loading.value = true
   try {
@@ -155,10 +164,31 @@ function toggleTheme() {
   isDark.value = !isDark.value
 }
 
+function goBackToNovelDetail() {
+  router.push(`/novel/${route.params.novelId}`)
+}
+
 function goToChapter(chapterId) {
   if (chapterId) {
-    router.push(`/novel/${route.params.novelId}/chapter/${chapterId}`)
+    loading.value = true
     currentChapterId.value = chapterId
+    
+    // 立即刷新章节内容
+    try {
+      const res = getChapterContent(route.params.novelId, chapterId)
+      chapter.value = res.data
+      
+      // 刷新评论
+      loadComments()
+      
+      // 路由跳转（保持历史记录）
+      router.push(`/novel/${route.params.novelId}/chapter/${chapterId}`)
+    } catch (error) {
+      console.error('切换章节失败:', error)
+      ElMessage.error('切换章节失败')
+    } finally {
+      loading.value = false
+    }
   }
 }
 
@@ -234,7 +264,6 @@ function formatTime(time) {
   min-height: calc(100vh - 60px);
   background: #f5f5f5;
   padding: 40px 20px;
-  cursor: pointer;
 }
 
 .reader-content.dark-theme {
