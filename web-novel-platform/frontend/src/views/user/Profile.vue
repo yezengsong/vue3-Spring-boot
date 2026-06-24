@@ -20,7 +20,7 @@
         <el-col :span="6">
           <el-card>
             <div class="user-info">
-              <el-avatar :size="80" :src="userInfo.avatar" />
+              <el-avatar :size="80" :src="userInfo.avatar || '/image/default_person.png'" />
               <h3>{{ userInfo.username }}</h3>
               <p>{{ userInfo.email || '未设置邮箱' }}</p>
             </div>
@@ -112,7 +112,7 @@
             <div class="comment-list" v-loading="loading">
               <div v-for="comment in commentList" :key="comment.commentId" class="comment-item">
                 <div class="comment-header">
-                  <el-avatar :size="40" :src="comment.avatar" />
+                  <el-avatar :size="40" :src="comment.avatar || '/image/default_person.png'" />
                   <div class="comment-meta">
                     <span class="comment-username">{{ comment.username }}</span>
                     <span class="comment-time">{{ formatTime(comment.createTime) }}</span>

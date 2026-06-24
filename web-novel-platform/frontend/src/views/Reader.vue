@@ -67,7 +67,7 @@
         <div class="comment-list">
           <div class="comment-item" v-for="comment in comments" :key="comment.commentId">
             <div class="comment-header">
-              <el-avatar :size="32" :src="comment.avatar" />
+              <el-avatar :size="32" :src="comment.avatar || '/image/default_person.png'" />
               <span class="comment-author">{{ comment.username }}</span>
               <span class="comment-time">{{ formatTime(comment.createTime) }}</span>
             </div>
@@ -104,7 +104,7 @@
             <div v-if="comment.replies && comment.replies.length > 0" class="replies-list">
               <div class="reply-item" v-for="reply in comment.replies" :key="reply.commentId">
                 <div class="reply-header">
-                  <el-avatar :size="24" :src="reply.avatar" />
+                  <el-avatar :size="24" :src="reply.avatar || '/image/default_person.png'" />
                   <span class="reply-author">{{ reply.username }}</span>
                   <span v-if="reply.replyToUsername" class="reply-to">回复 @{{ reply.replyToUsername }}</span>
                   <span class="reply-time">{{ formatTime(reply.createTime) }}</span>

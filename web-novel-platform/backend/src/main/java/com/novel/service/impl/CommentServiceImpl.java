@@ -124,9 +124,10 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             .map(Chapter::getChapterId)
             .collect(Collectors.toList());
         
-        // 查询这些章节的所有评论（包括一级和二级评论）
+        // 查询这些章节的一级评论（不包括二级评论）
         LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(Comment::getChapterId, chapterIds)
+               .isNull(Comment::getParentId)  // 只查询一级评论
                .orderByAsc(Comment::getCommentId);
         
         List<Comment> comments = list(wrapper);

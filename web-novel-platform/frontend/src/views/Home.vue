@@ -17,7 +17,7 @@
           <template v-if="userStore.token">
             <el-dropdown @command="handleCommand">
               <span class="user-info">
-                <el-avatar :size="32" :src="userStore.user.avatar" />
+                <el-avatar :size="32" :src="userStore.user.avatar || '/image/default_person.png'" />
                 <span>{{ userStore.user.username }}</span>
               </span>
               <template #dropdown>
