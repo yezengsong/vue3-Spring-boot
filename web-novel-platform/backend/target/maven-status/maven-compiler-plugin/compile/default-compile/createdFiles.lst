@@ -1,5 +1,7 @@
 com\novel\entity\ReadHistory.class
+com\novel\config\WebMvcConfig.class
 com\novel\security\JwtAuthenticationFilter.class
+com\novel\dto\response\ReadHistoryDTO.class
 com\novel\service\CommentService.class
 com\novel\mapper\ChapterMapper.class
 com\novel\service\impl\NovelServiceImpl.class
@@ -16,15 +18,18 @@ com\novel\service\impl\CategoryServiceImpl.class
 com\novel\dto\response\CommentDTO.class
 com\novel\controller\admin\AdminController.class
 com\novel\NovelApplication.class
+com\novel\dto\response\BookmarkDTO.class
 com\novel\entity\User.class
 com\novel\controller\CommentController.class
 com\novel\dto\response\NovelDetail$ChapterSimple.class
 com\novel\entity\Comment.class
 com\novel\service\ChapterService.class
+com\novel\controller\ReadHistoryController.class
 com\novel\config\MybatisPlusConfig.class
 com\novel\controller\ChapterController.class
 com\novel\entity\Chapter.class
 com\novel\service\impl\BookmarkServiceImpl.class
+com\novel\service\ReadHistoryService.class
 com\novel\entity\Category.class
 com\novel\common\Result.class
 com\novel\config\SecurityConfig.class
@@ -50,3 +55,4 @@ com\novel\service\BookmarkService.class
 com\novel\mapper\BookmarkMapper.class
 com\novel\dto\response\NovelDetail.class
 com\novel\controller\BookmarkController.class
+com\novel\service\impl\ReadHistoryServiceImpl.class

@@ -3,6 +3,7 @@ package com.novel.dto.response;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 评论 DTO
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 public class CommentDTO {
     
-    private Long id;
+    private Long commentId;
     private Long chapterId;
     private Long userId;
     private String username;
@@ -20,4 +21,14 @@ public class CommentDTO {
     private Integer likeCount;
     private Integer status;
     private LocalDateTime createTime;
+    
+    /**
+     * 回复的用户名（如果是回复评论）
+     */
+    private String replyToUsername;
+    
+    /**
+     * 回复列表（仅一级评论包含）
+     */
+    private List<CommentDTO> replies;
 }

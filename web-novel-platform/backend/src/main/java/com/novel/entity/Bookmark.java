@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 @TableName("bookmark")
 public class Bookmark {
     
-    @TableId(type = IdType.AUTO)
-    private Long id;
+    @TableId(value = "bookmark_id", type = IdType.AUTO)
+    private Long bookmarkId;
     
     private Long userId;
     

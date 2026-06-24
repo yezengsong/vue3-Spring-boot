@@ -96,7 +96,7 @@ public class NovelServiceImpl extends ServiceImpl<NovelMapper, Novel> implements
         detail.setChapters(chapters.stream()
             .map(chapter -> {
                 NovelDetail.ChapterSimple simple = new NovelDetail.ChapterSimple();
-                simple.setId(chapter.getId());
+                simple.setChapterId(chapter.getChapterId());
                 simple.setTitle(chapter.getTitle());
                 simple.setOrderNum(chapter.getOrderNum());
                 return simple;
@@ -115,7 +115,7 @@ public class NovelServiceImpl extends ServiceImpl<NovelMapper, Novel> implements
         
         LambdaQueryWrapper<Novel> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Novel::getCategoryId, novel.getCategoryId())
-               .ne(Novel::getId, novelId)
+               .ne(Novel::getNovelId, novelId)
                .eq(Novel::getStatus, 1)
                .orderByDesc(Novel::getClickCount)
                .last("LIMIT " + limit);
@@ -129,7 +129,7 @@ public class NovelServiceImpl extends ServiceImpl<NovelMapper, Novel> implements
         baseMapper.update(null, 
             new LambdaUpdateWrapper<Novel>()
                 .setSql("click_count = click_count + 1")
-                .eq(Novel::getId, novelId));
+                .eq(Novel::getNovelId, novelId));
     }
     
     @Override
@@ -153,7 +153,7 @@ public class NovelServiceImpl extends ServiceImpl<NovelMapper, Novel> implements
         LambdaQueryWrapper<Category> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Category::getName, categoryName);
         Category category = categoryService.getOne(wrapper);
-        return category != null ? category.getId().longValue() : null;
+        return category != null ? category.getCategoryId().longValue() : null;
     }
     
     @Override
@@ -161,7 +161,7 @@ public class NovelServiceImpl extends ServiceImpl<NovelMapper, Novel> implements
         LambdaQueryWrapper<Novel> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Novel::getTitle, title);
         Novel novel = getOne(wrapper);
-        return novel != null ? novel.getId() : null;
+        return novel != null ? novel.getNovelId() : null;
     }
     
     private NovelListItem convertToListItem(Novel novel) {

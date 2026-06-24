@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 @TableName("category")
 public class Category {
     
-    @TableId(type = IdType.AUTO)
-    private Integer id;
+    @TableId(value = "category_id", type = IdType.AUTO)
+    private Integer categoryId;
     
     private String name;
     

@@ -62,7 +62,7 @@ public class AdminController {
             }
             novel.setCategoryId(categoryId);
         }
-        novel.setId(id);
+        novel.setNovelId(id);
         novelService.updateNovel(novel);
         return Result.success();
     }
@@ -106,7 +106,7 @@ public class AdminController {
     @PutMapping("/chapter/{id}")
     public Result<Void> updateChapter(@PathVariable Long id, 
                                       @RequestBody Chapter chapter) {
-        chapter.setId(id);
+        chapter.setChapterId(id);
         chapterService.updateChapter(chapter);
         return Result.success();
     }

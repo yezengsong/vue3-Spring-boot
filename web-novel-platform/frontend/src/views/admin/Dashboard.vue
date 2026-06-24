@@ -38,38 +38,52 @@
         <el-main>
           <!-- 小说管理 -->
           <div v-if="activeMenu === 'novel'">
-            <el-card>
+            <el-card class="fixed-card">
               <template #header>
                 <div class="card-header">
                   <span>小说管理</span>
                   <el-button type="primary" @click="showNovelDialog = true">新增小说</el-button>
                 </div>
               </template>
-              <el-table :data="novelList" v-loading="loading">
-                <el-table-column prop="id" label="ID" width="80" />
-                <el-table-column prop="title" label="标题" />
-                <el-table-column prop="author" label="作者" width="120" />
-                <el-table-column prop="categoryId" label="分类" width="100" />
-                <el-table-column prop="status" label="状态" width="80">
-                  <template #default="{ row }">
-                    <el-tag :type="row.status === 2 ? 'success' : 'warning'">
-                      {{ row.status === 2 ? '完结' : '连载' }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="200">
-                  <template #default="{ row }">
-                    <el-button size="small" @click="editNovel(row)">编辑</el-button>
-                    <el-button size="small" type="danger" @click="deleteNovel(row.id)">删除</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
+              <div class="card-body-wrapper">
+                <el-table :data="pagedNovelList" v-loading="loading" max-height="528">
+                  <el-table-column prop="novelId" label="ID" width="80" />
+                  <el-table-column prop="title" label="标题" />
+                  <el-table-column prop="author" label="作者" width="120" />
+                  <el-table-column label="分类" width="100">
+                    <template #default="{ row }">
+                      {{ row.categoryName || '未知分类' }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="status" label="状态" width="80">
+                    <template #default="{ row }">
+                      <el-tag :type="row.status === 2 ? 'success' : 'warning'">
+                        {{ row.status === 2 ? '完结' : '连载' }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="200">
+                    <template #default="{ row }">
+                      <el-button size="small" @click="editNovel(row)">编辑</el-button>
+                      <el-button size="small" type="danger" @click="deleteNovel(row.novelId)">删除</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+              <div class="card-footer">
+                <el-pagination
+                  v-model:current-page="novelPage"
+                  :page-size="10"
+                  layout="prev, pager, next"
+                  :total="novelList.length"
+                />
+              </div>
             </el-card>
           </div>
 
           <!-- 章节管理 -->
           <div v-if="activeMenu === 'chapter'">
-            <el-card>
+            <el-card class="fixed-card">
               <template #header>
                 <div class="card-header">
                   <span>章节管理</span>
@@ -78,10 +92,10 @@
               </template>
               <el-form :inline="true">
                 <el-form-item label="小说名称">
-                  <el-select v-model="chapterQuery.novelName" placeholder="选择小说" style="width: 200px" clearable>
+                  <el-select v-model="chapterQuery.novelName" placeholder="选择小说" style="width: 200px" clearable @change="loadChapters">
                     <el-option
                       v-for="novel in novelList"
-                      :key="novel.id"
+                      :key="novel.novelId"
                       :label="novel.title"
                       :value="novel.title"
                     />
@@ -91,24 +105,32 @@
                   <el-button type="primary" @click="loadChapters">查询</el-button>
                 </el-form-item>
               </el-form>
-              <el-table :data="chapterList" v-loading="loading">
-                <el-table-column prop="id" label="ID" width="80" />
-                <el-table-column prop="novelId" label="小说 ID" width="100" />
-                <el-table-column prop="title" label="标题" />
-                <el-table-column prop="orderNum" label="顺序" width="80" />
-                <el-table-column label="操作" width="200">
-                  <template #default="{ row }">
-                    <el-button size="small" @click="editChapter(row)">编辑</el-button>
-                    <el-button size="small" type="danger" @click="deleteChapter(row.id)">删除</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
+              <div class="card-body-wrapper">
+                <el-table :data="pagedChapterList" v-loading="loading" max-height="528">
+                  <el-table-column prop="chapterId" label="ID" width="80" />
+                  <el-table-column prop="novelId" label="小说 ID" width="100" />
+                  <el-table-column prop="title" label="标题" />
+                  <el-table-column prop="orderNum" label="顺序" width="80" />
+                  <el-table-column label="操作" width="200">
+                    <template #default="{ row }">
+                      <el-button size="small" @click="editChapter(row)">编辑</el-button>
+                      <el-button size="small" type="danger" @click="deleteChapter(row.chapterId)">删除</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+              <div class="card-footer">
+                <el-pagination
+                  v-model:current-page="chapterPage"
+                  :page-size="10"
+                  layout="prev, pager, next"
+                  :total="chapterList.length"
+                />
+              </div>
             </el-card>
           </div>
-
-          <!-- 评论管理 -->
           <div v-if="activeMenu === 'comment'">
-            <el-card>
+            <el-card class="fixed-card">
               <template #header>
                 <div class="card-header">
                   <span>评论管理</span>
@@ -133,7 +155,7 @@
                   >
                     <el-option
                       v-for="novel in novelList"
-                      :key="novel.id"
+                      :key="novel.novelId"
                       :label="novel.title"
                       :value="novel.title"
                     />
@@ -143,39 +165,50 @@
                   <el-button type="primary" @click="loadComments">查询</el-button>
                 </el-form-item>
               </el-form>
-              <el-table :data="commentList" v-loading="loading">
-                <el-table-column prop="id" label="ID" width="80" />
-                <el-table-column prop="chapterId" label="章节 ID" width="100" />
-                <el-table-column prop="content" label="内容" show-overflow-tooltip />
-                <el-table-column prop="status" label="状态" width="100">
-                  <template #default="{ row }">
-                    <el-tag :type="row.status === 1 ? 'success' : 'warning'">
-                      {{ row.status === 0 ? '待审核' : row.status === 1 ? '已通过' : '已拒绝' }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="200">
-                  <template #default="{ row }">
-                    <el-button
-                      v-if="row.status === 0"
-                      size="small"
-                      type="success"
-                      @click="auditComment(row.id, 1)"
-                    >
-                      通过
-                    </el-button>
-                    <el-button
-                      v-if="row.status === 0"
-                      size="small"
-                      type="danger"
-                      @click="auditComment(row.id, 2)"
-                    >
-                      拒绝
-                    </el-button>
-                    <el-button size="small" type="danger" @click="deleteComment(row.id)">删除</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
+              <div class="card-body-wrapper">
+                <el-table :data="pagedCommentList" v-loading="loading" max-height="528">
+                  <el-table-column prop="commentId" label="ID" width="80" />
+                  <el-table-column prop="chapterId" label="章节 ID" width="100" />
+                  <el-table-column prop="username" label="用户名" width="120" />
+                  <el-table-column prop="content" label="内容" show-overflow-tooltip />
+                  <el-table-column prop="status" label="状态" width="100">
+                    <template #default="{ row }">
+                      <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+                        {{ row.status === 0 ? '已封禁' : '正常' }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="200">
+                    <template #default="{ row }">
+                      <el-button
+                        v-if="row.status === 1"
+                        size="small"
+                        type="danger"
+                        @click="auditComment(row.commentId, 0)"
+                      >
+                        封禁
+                      </el-button>
+                      <el-button
+                        v-else
+                        size="small"
+                        type="success"
+                        @click="auditComment(row.commentId, 1)"
+                      >
+                        解封
+                      </el-button>
+                      <el-button size="small" type="danger" @click="deleteComment(row.commentId)">删除</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+              <div class="card-footer">
+                <el-pagination
+                  v-model:current-page="commentPage"
+                  :page-size="10"
+                  layout="prev, pager, next"
+                  :total="commentList.length"
+                />
+              </div>
             </el-card>
           </div>
         </el-main>
@@ -183,7 +216,7 @@
     </el-container>
 
     <!-- 小说编辑对话框 -->
-    <el-dialog v-model="showNovelDialog" :title="novelForm.id ? '编辑小说' : '新增小说'">
+    <el-dialog v-model="showNovelDialog" :title="novelForm.novelId ? '编辑小说' : '新增小说'">
       <el-form :model="novelForm" label-width="80px">
         <el-form-item label="标题">
           <el-input v-model="novelForm.title" />
@@ -195,7 +228,7 @@
           <el-select v-model="novelForm.categoryName" placeholder="选择分类" style="width: 100%">
             <el-option
               v-for="cat in categories"
-              :key="cat.id"
+              :key="cat.categoryId"
               :label="cat.name"
               :value="cat.name"
             />
@@ -218,13 +251,13 @@
     </el-dialog>
 
     <!-- 章节编辑对话框 -->
-    <el-dialog v-model="showChapterDialog" :title="chapterForm.id ? '编辑章节' : '新增章节'">
+    <el-dialog v-model="showChapterDialog" :title="chapterForm.chapterId ? '编辑章节' : '新增章节'">
       <el-form :model="chapterForm" label-width="80px">
         <el-form-item label="小说">
           <el-select v-model="chapterForm.novelName" placeholder="选择小说" style="width: 100%">
             <el-option
               v-for="novel in novelList"
-              :key="novel.id"
+              :key="novel.novelId"
               :label="novel.title"
               :value="novel.title"
             />
@@ -249,7 +282,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import request from '@/utils/request'
@@ -263,19 +296,37 @@ const loading = ref(false)
 
 // 小说管理
 const novelList = ref([])
+const novelPage = ref(1)
 const showNovelDialog = ref(false)
 const novelForm = ref({})
 const categories = ref([])
 
+const pagedNovelList = computed(() => {
+  const start = (novelPage.value - 1) * 10
+  return novelList.value.slice(start, start + 10)
+})
+
 // 章节管理
 const chapterList = ref([])
+const chapterPage = ref(1)
 const showChapterDialog = ref(false)
 const chapterQuery = ref({ novelName: '' })
 const chapterForm = ref({})
 
+const pagedChapterList = computed(() => {
+  const start = (chapterPage.value - 1) * 10
+  return chapterList.value.slice(start, start + 10)
+})
+
 // 评论管理
 const commentList = ref([])
+const commentPage = ref(1)
 const commentQuery = ref({ novelName: '' })
+
+const pagedCommentList = computed(() => {
+  const start = (commentPage.value - 1) * 10
+  return commentList.value.slice(start, start + 10)
+})
 
 onMounted(() => {
   if (userStore.user.role !== 'ADMIN') {
@@ -289,7 +340,7 @@ onMounted(() => {
 
 // 监听小说对话框打开，初始化表单
 watch(showNovelDialog, (newVal) => {
-  if (newVal && !novelForm.value.id) {
+  if (newVal && !novelForm.value.novelId) {
     // 新增模式，初始化表单
     novelForm.value = { status: 1 }
   }
@@ -297,7 +348,7 @@ watch(showNovelDialog, (newVal) => {
 
 // 监听章节对话框打开，初始化表单
 watch(showChapterDialog, (newVal) => {
-  if (newVal && !chapterForm.value.id) {
+  if (newVal && !chapterForm.value.chapterId) {
     // 新增模式，初始化表单
     chapterForm.value = { orderNum: 1 }
   }
@@ -312,7 +363,14 @@ async function loadCategories() {
   }
 }
 
+function getCategoryName(categoryId) {
+  if (!categoryId) return '未知分类'
+  const category = categories.value.find(c => c.categoryId == categoryName || String(c.categoryId) === String(categoryName))
+  return category ? category.name : '未知分类'
+}
+
 async function loadNovels() {
+  novelPage.value = 1
   loading.value = true
   try {
     const res = await request.get('/novel/list', {
@@ -337,12 +395,13 @@ async function loadChapters() {
     ElMessage.error('未找到该小说')
     return
   }
+  chapterPage.value = 1
   loading.value = true
   try {
     console.log('=== 请求章节列表 ===')
-    console.log('小说 ID:', novel.id)
-    console.log('请求 URL:', `/novel/${novel.id}/chapters`)
-    const res = await request.get(`/novel/${novel.id}/chapters`)
+    console.log('小说 ID:', novel.novelId)
+    console.log('请求 URL:', `/novel/${novel.novelId}/chapters`)
+    const res = await request.get(`/novel/${novel.novelId}/chapters`)
     console.log('=== 章节列表响应 ===')
     console.log('响应数据:', res)
     console.log('res.data:', res.data)
@@ -394,8 +453,8 @@ async function saveNovel() {
       cover: novelForm.value.cover || ''
     }
     
-    if (novelForm.value.id) {
-      await request.put(`/admin/novel/${novelForm.value.id}`, novelData)
+    if (novelForm.value.novelId) {
+      await request.put(`/admin/novel/${novelForm.value.novelId}`, novelData)
     } else {
       await request.post('/admin/novel', novelData)
     }
@@ -417,8 +476,8 @@ async function saveNovel() {
 
 async function saveChapter() {
   try {
-    if (chapterForm.value.id) {
-      await request.put(`/admin/chapter/${chapterForm.value.id}`, chapterForm.value)
+    if (chapterForm.value.chapterId) {
+      await request.put(`/admin/chapter/${chapterForm.value.chapterId}`, chapterForm.value)
     } else {
       // 新增章节时，通过小说名称查找小说 ID
       const novel = novelList.value.find(n => n.title === chapterForm.value.novelName)
@@ -440,7 +499,7 @@ async function saveChapter() {
 
 function editNovel(row) {
   // 查找分类名称
-  const category = categories.value.find(c => c.id === row.categoryId)
+  const category = categories.value.find(c => c.categoryId === row.categoryId)
   novelForm.value = { 
     ...row,
     categoryName: category ? category.name : ''
@@ -450,7 +509,7 @@ function editNovel(row) {
 
 function editChapter(row) {
   // 查找小说名称
-  const novel = novelList.value.find(n => n.id === row.novelId)
+  const novel = novelList.value.find(n => n.novelId === row.novelId)
   chapterForm.value = { 
     ...row,
     novelName: novel ? novel.title : ''
@@ -491,16 +550,30 @@ async function loadComments() {
     ElMessage.error('未找到该小说')
     return
   }
+  commentPage.value = 1
   loading.value = true
   try {
     console.log('=== 请求评论列表 ===')
-    console.log('小说 ID:', novel.id)
-    console.log('请求 URL:', `/admin/novel/${novel.id}/comments`)
-    const res = await request.get(`/admin/novel/${novel.id}/comments`)
+    console.log('小说 ID:', novel.novelId)
+    console.log('请求 URL:', `/admin/novel/${novel.novelId}/comments`)
+    const res = await request.get(`/admin/novel/${novel.novelId}/comments`)
     console.log('=== 评论列表响应 ===')
     console.log('响应数据:', res)
     console.log('res.data:', res.data)
-    commentList.value = res.data || res
+    // 扁平化评论数据：将一级评论和二级评论合并为一个列表
+    const rawData = res.data || res
+    const flatList = []
+    rawData.forEach(comment => {
+      flatList.push(comment)
+      if (comment.replies && comment.replies.length > 0) {
+        comment.replies.forEach(reply => {
+          flatList.push(reply)
+        })
+      }
+    })
+    // 按评论ID升序排序
+    flatList.sort((a, b) => a.commentId - b.commentId)
+    commentList.value = flatList
     console.log('评论列表:', commentList.value)
     if (commentList.value.length === 0) {
       ElMessage.info('该小说暂无评论')
@@ -522,12 +595,15 @@ async function loadComments() {
 }
 
 async function auditComment(id, status) {
+  const actionText = status === 0 ? '封禁' : '解封'
+  await ElMessageBox.confirm(`确定要${actionText}这条评论吗？`, '提示', { type: 'warning' })
   try {
     await request.put(`/admin/comment/${id}/audit`, null, { params: { status } })
-    ElMessage.success('操作成功')
+    ElMessage.success(`${actionText}成功`)
     loadComments()
   } catch (error) {
     console.error('操作失败:', error)
+    ElMessage.error(`${actionText}失败，请重试`)
   }
 }
 
@@ -545,12 +621,14 @@ async function deleteComment(id) {
 
 <style scoped>
 .admin-dashboard {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .el-aside {
   background-color: #304156;
   color: #fff;
+  height: 100vh;
 }
 
 .logo {
@@ -574,11 +652,37 @@ async function deleteComment(id) {
 .el-main {
   background: #f5f5f5;
   padding: 20px;
+  overflow-y: auto;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.fixed-card {
+  height: calc(90vh - 100px);
+  display: flex;
+  flex-direction: column;
+}
+
+.fixed-card :deep(.el-card__body) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.card-body-wrapper {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.card-footer {
+  padding: 12px 0 0;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
 }
 </style>

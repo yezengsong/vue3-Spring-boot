@@ -40,9 +40,11 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 公开接口
                 .antMatchers("/api/user/register", "/api/user/login").permitAll()
+                .antMatchers("/api/novel/user/bookmarks/**").authenticated()
                 .antMatchers("/api/novel/**").permitAll()
                 .antMatchers("/api/chapter/**").permitAll()
                 .antMatchers("/api/category/**").permitAll()
+                .antMatchers("/image/**").permitAll()
                 // 需要认证的接口
                 .antMatchers("/api/admin/**").hasRole("ADMIN")
                 .antMatchers("/api/bookmark/**").authenticated()

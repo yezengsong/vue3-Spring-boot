@@ -42,7 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 User user = userService.getById(userId);
                 if (user != null && user.getStatus() == 1) {
                     JwtUserDetails userDetails = new JwtUserDetails(
-                        user.getId(),
+                        user.getUserId(),
                         user.getUsername(),
                         user.getPassword(),
                         Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))

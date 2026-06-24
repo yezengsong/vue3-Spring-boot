@@ -14,9 +14,9 @@
           <el-select v-model="currentChapterId" @change="goToChapter($event)" style="width: 300px">
             <el-option
               v-for="c in chapters"
-              :key="c.id"
+              :key="c.chapterId"
               :label="c.title"
-              :value="c.id"
+              :value="c.chapterId"
             />
           </el-select>
           <el-button :disabled="!chapter?.nextChapterId" @click="goToChapter(chapter?.nextChapterId)">
@@ -55,13 +55,17 @@
             type="textarea"
             :rows="3"
             placeholder="发表评论..."
+            maxlength="500"
+            show-word-limit
           />
-          <el-button type="primary" @click="submitComment" :loading="submitting">
-            发表评论
-          </el-button>
+          <div class="form-actions">
+            <el-button type="primary" @click="submitComment" :loading="submitting">
+              发表评论
+            </el-button>
+          </div>
         </div>
         <div class="comment-list">
-          <div class="comment-item" v-for="comment in comments" :key="comment.id">
+          <div class="comment-item" v-for="comment in comments" :key="comment.commentId">
             <div class="comment-header">
               <el-avatar :size="32" :src="comment.avatar" />
               <span class="comment-author">{{ comment.username }}</span>
@@ -73,9 +77,46 @@
                 <el-icon><ThumbUp /></el-icon>
                 {{ comment.likeCount }}
               </el-button>
-              <el-button text size="small" @click="showReplyInput(comment.id)">
+              <el-button text size="small" @click="showReplyInput(comment)">
                 回复
               </el-button>
+            </div>
+            
+            <!-- 回复输入框 -->
+            <div v-if="replyToCommentId === comment.commentId" class="reply-input-wrapper">
+              <el-input
+                v-model="replyContent"
+                type="textarea"
+                :rows="2"
+                :placeholder="`回复 @${comment.username} ...`"
+                maxlength="500"
+                show-word-limit
+              />
+              <div class="reply-actions">
+                <el-button size="small" @click="cancelReply">取消</el-button>
+                <el-button size="small" type="primary" @click="submitReply(comment)" :loading="submitting">
+                  提交回复
+                </el-button>
+              </div>
+            </div>
+            
+            <!-- 回复列表 -->
+            <div v-if="comment.replies && comment.replies.length > 0" class="replies-list">
+              <div class="reply-item" v-for="reply in comment.replies" :key="reply.commentId">
+                <div class="reply-header">
+                  <el-avatar :size="24" :src="reply.avatar" />
+                  <span class="reply-author">{{ reply.username }}</span>
+                  <span v-if="reply.replyToUsername" class="reply-to">回复 @{{ reply.replyToUsername }}</span>
+                  <span class="reply-time">{{ formatTime(reply.createTime) }}</span>
+                </div>
+                <div class="reply-content">{{ reply.content }}</div>
+                <div class="reply-actions-small">
+                  <el-button text size="small" @click="likeComment(reply)">
+                    <el-icon><ThumbUp /></el-icon>
+                    {{ reply.likeCount }}
+                  </el-button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -88,7 +129,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getChapterContent, getChapters } from '@/api/chapter'
-import { getComments, createComment, likeComment as apiLikeComment } from '@/api/comment'
+import { getComments, createComment, replyComment, likeComment as apiLikeComment } from '@/api/comment'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
@@ -104,6 +145,7 @@ const chapters = ref([])
 const comments = ref([])
 const currentChapterId = ref(Number(route.params.chapterId))
 const commentContent = ref('')
+const replyContent = ref('')
 const replyToCommentId = ref(null)
 
 const formattedContent = computed(() => {
@@ -119,7 +161,7 @@ onMounted(async () => {
 
 // 监听路由变化，自动刷新章节内容
 watch(() => route.params.chapterId, async (newChapterId) => {
-  if (newChapterId && newChapterId !== chapter.value?.id?.toString()) {
+  if (newChapterId && newChapterId !== chapter.value?.chapterId?.toString()) {
     currentChapterId.value = Number(newChapterId)
     await loadChapterContent()
     await loadComments()
@@ -193,19 +235,34 @@ function goToChapter(chapterId) {
 }
 
 async function submitComment() {
-  if (!commentContent.value.trim()) {
+  // 验证必填字段
+  if (!commentContent.value || !commentContent.value.trim()) {
     ElMessage.warning('请输入评论内容')
+    return
+  }
+
+  // 验证字数
+  if (commentContent.value.length > 500) {
+    ElMessage.warning('评论内容不能超过 500 字')
     return
   }
 
   submitting.value = true
   try {
-    await createComment(route.params.chapterId, { content: commentContent.value })
+    await createComment(route.params.chapterId, { content: commentContent.value.trim() })
     ElMessage.success('评论成功，待审核后显示')
     commentContent.value = ''
     await loadComments()
   } catch (error) {
     console.error('发表评论失败:', error)
+    // 显示详细错误信息
+    if (error.response) {
+      ElMessage.error(`错误 ${error.response.status}: ${error.response.data?.message || error.response.statusText}`)
+    } else if (error.message) {
+      ElMessage.error(error.message)
+    } else {
+      ElMessage.error('发表评论失败，请重试')
+    }
   } finally {
     submitting.value = false
   }
@@ -213,7 +270,7 @@ async function submitComment() {
 
 async function likeComment(comment) {
   try {
-    await apiLikeComment(comment.id)
+    await apiLikeComment(comment.commentId)
     comment.likeCount++
     ElMessage.success('点赞成功')
   } catch (error) {
@@ -221,8 +278,51 @@ async function likeComment(comment) {
   }
 }
 
-function showReplyInput(commentId) {
-  replyToCommentId.value = commentId
+function showReplyInput(comment) {
+  replyToCommentId.value = comment.commentId
+  replyContent.value = ''
+}
+
+function cancelReply() {
+  replyToCommentId.value = null
+  replyContent.value = ''
+}
+
+async function submitReply(parentComment) {
+  // 验证必填字段
+  if (!replyContent.value || !replyContent.value.trim()) {
+    ElMessage.warning('请输入回复内容')
+    return
+  }
+
+  // 验证字数
+  if (replyContent.value.length > 500) {
+    ElMessage.warning('回复内容不能超过 500 字')
+    return
+  }
+
+  submitting.value = true
+  try {
+    await replyComment(route.params.chapterId, parentComment.commentId, { 
+      content: replyContent.value.trim() 
+    })
+    ElMessage.success('回复成功')
+    replyContent.value = ''
+    replyToCommentId.value = null
+    await loadComments()
+  } catch (error) {
+    console.error('回复评论失败:', error)
+    // 显示详细错误信息
+    if (error.response) {
+      ElMessage.error(`错误 ${error.response.status}: ${error.response.data?.message || error.response.statusText}`)
+    } else if (error.message) {
+      ElMessage.error(error.message)
+    } else {
+      ElMessage.error('回复失败，请重试')
+    }
+  } finally {
+    submitting.value = false
+  }
 }
 
 function formatTime(time) {
@@ -323,9 +423,81 @@ function formatTime(time) {
   margin-bottom: 20px;
 }
 
+.form-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .comment-item {
   padding: 16px 0;
   border-bottom: 1px solid #eee;
+}
+
+.reply-input-wrapper {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.reply-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.replies-list {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  border-left: 3px solid #1890ff;
+}
+
+.reply-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.reply-item:last-child {
+  border-bottom: none;
+}
+
+.reply-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.reply-author {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.reply-to {
+  color: #666;
+  font-size: 13px;
+}
+
+.reply-time {
+  color: #999;
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.reply-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.reply-actions-small {
+  display: flex;
+  gap: 8px;
 }
 
 .comment-header {

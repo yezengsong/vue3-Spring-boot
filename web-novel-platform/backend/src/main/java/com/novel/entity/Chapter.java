@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 @TableName("chapter")
 public class Chapter {
     
-    @TableId(type = IdType.AUTO)
-    private Long id;
+    @TableId(value = "chapter_id", type = IdType.AUTO)
+    private Long chapterId;
     
     private Long novelId;
     

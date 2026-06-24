@@ -14,3 +14,8 @@ export function unbookmark(novelId) {
 export function getBookmarks() {
   return request.get('/novel/user/bookmarks')
 }
+
+// 获取书架详情列表（包含小说信息）
+export function getBookmarkDetails() {
+  return request.get('/novel/user/bookmarks/detail')
+}

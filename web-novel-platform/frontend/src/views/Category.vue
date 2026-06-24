@@ -44,9 +44,9 @@
         </el-tag>
         <el-tag
           v-for="cat in categories"
-          :key="cat.id"
-          :type="selectedCategory === cat.id ? 'primary' : ''"
-          @click="selectCategory(cat.id)"
+          :key="cat.categoryId"
+          :type="selectedCategory === cat.categoryId ? 'primary' : ''"
+          @click="selectCategory(cat.categoryId)"
         >
           {{ cat.name }}
         </el-tag>
@@ -55,10 +55,10 @@
       <!-- 小说列表 -->
       <div class="novel-list" v-loading="loading">
         <el-row :gutter="20">
-          <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="novel in novelList" :key="novel.id">
-            <el-card class="novel-card" shadow="hover" @click="goToNovel(novel.id)">
+          <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="novel in novelList" :key="novel.novelId">
+            <el-card class="novel-card" shadow="hover" @click="goToNovel(novel.novelId)">
               <div class="novel-cover">
-                <el-image :src="novel.cover || '/default-cover.png'" fit="cover" />
+                <el-image :src="novel.cover || '/image/default-cover.png'" fit="cover" />
               </div>
               <div class="novel-info">
                 <h3 class="novel-title">{{ novel.title }}</h3>

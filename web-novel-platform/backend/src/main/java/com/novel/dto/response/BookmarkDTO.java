@@ -5,19 +5,28 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 小说列表项 DTO
+ * 书架书籍DTO
  */
 @Data
-public class NovelListItem {
+public class BookmarkDTO {
+    
+    private Long bookmarkId;
     
     private Long novelId;
+    
     private String title;
+    
     private String author;
+    
     private String cover;
+    
     private String categoryName;
+    
     private String description;
+    
     private Integer status;
+    
     private Long wordCount;
-    private Long clickCount;
+    
     private LocalDateTime createTime;
 }

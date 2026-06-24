@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 @TableName("read_history")
 public class ReadHistory {
     
-    @TableId(type = IdType.AUTO)
-    private Long id;
+    @TableId(value = "history_id", type = IdType.AUTO)
+    private Long historyId;
     
     private Long userId;
     

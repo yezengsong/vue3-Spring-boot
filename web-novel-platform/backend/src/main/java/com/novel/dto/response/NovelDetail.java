@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 public class NovelDetail {
     
-    private Long id;
+    private Long novelId;
     private String title;
     private String author;
     private String cover;
@@ -27,7 +27,7 @@ public class NovelDetail {
     
     @Data
     public static class ChapterSimple {
-        private Long id;
+        private Long chapterId;
         private String title;
         private Integer orderNum;
     }

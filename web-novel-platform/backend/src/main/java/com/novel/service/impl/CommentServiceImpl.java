@@ -54,7 +54,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         comment.setContent(request.getContent());
         comment.setParentId(request.getParentId());
         comment.setLikeCount(0);
-        comment.setStatus(0);  // 待审核
+        comment.setStatus(1);  // 自动审核通过
         
         save(comment);
         return comment;
@@ -69,7 +69,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         comment.setContent(request.getContent());
         comment.setParentId(request.getParentId());
         comment.setLikeCount(0);
-        comment.setStatus(0);  // 待审核
+        comment.setStatus(1);  // 自动审核通过
         
         save(comment);
         return comment;
@@ -81,7 +81,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         baseMapper.update(null,
             new LambdaUpdateWrapper<Comment>()
                 .setSql("like_count = like_count + 1")
-                .eq(Comment::getId, commentId));
+                .eq(Comment::getCommentId, commentId));
     }
     
     @Override
@@ -117,15 +117,13 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         }
         
         List<Long> chapterIds = chapters.stream()
-            .map(Chapter::getId)
+            .map(Chapter::getChapterId)
             .collect(Collectors.toList());
         
-        // 查询这些章节的评论（待审核和已审核的）
+        // 查询这些章节的所有评论（包括一级和二级评论）
         LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(Comment::getChapterId, chapterIds)
-               .isNull(Comment::getParentId)  // 一级评论
-               .in(Comment::getStatus, 0, 1)  // 待审核或已通过
-               .orderByDesc(Comment::getCreateTime);
+               .orderByAsc(Comment::getCommentId);
         
         List<Comment> comments = list(wrapper);
         
@@ -136,7 +134,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     
     private CommentDTO convertToDTO(Comment comment) {
         CommentDTO dto = new CommentDTO();
-        dto.setId(comment.getId());
+        dto.setCommentId(comment.getCommentId());
         dto.setChapterId(comment.getChapterId());
         dto.setUserId(comment.getUserId());
         dto.setContent(comment.getContent());
@@ -152,6 +150,34 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             dto.setAvatar(user.getAvatar());
         }
         
+        // 获取回复信息（如果是回复评论）
+        if (comment.getParentId() != null) {
+            Comment parentComment = getById(comment.getParentId());
+            if (parentComment != null) {
+                User parentUser = userService.getById(parentComment.getUserId());
+                if (parentUser != null) {
+                    dto.setReplyToUsername(parentUser.getUsername());
+                }
+            }
+        }
+        
+        // 获取该评论的回复列表（一级评论才需要）
+        if (comment.getParentId() == null) {
+            dto.setReplies(getRepliesByParentId(comment.getCommentId()));
+        }
+        
         return dto;
+    }
+    
+    private List<CommentDTO> getRepliesByParentId(Long parentId) {
+        LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Comment::getParentId, parentId)
+               .eq(Comment::getStatus, 1)  // 已审核通过
+               .orderByAsc(Comment::getCreateTime);
+        
+        List<Comment> replies = list(wrapper);
+        return replies.stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
     }
 }

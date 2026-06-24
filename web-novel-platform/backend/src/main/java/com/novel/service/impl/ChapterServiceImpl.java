@@ -30,7 +30,7 @@ public class ChapterServiceImpl extends ServiceImpl<ChapterMapper, Chapter> impl
         }
         
         ChapterContent content = new ChapterContent();
-        content.setId(chapter.getId());
+        content.setChapterId(chapter.getChapterId());
         content.setNovelId(chapter.getNovelId());
         content.setTitle(chapter.getTitle());
         content.setContent(chapter.getContent());
@@ -45,7 +45,7 @@ public class ChapterServiceImpl extends ServiceImpl<ChapterMapper, Chapter> impl
                    .orderByDesc(Chapter::getOrderNum)
                    .last("LIMIT 1");
         Chapter prevChapter = getOne(prevWrapper);
-        content.setPrevChapterId(prevChapter != null ? prevChapter.getId() : null);
+        content.setPrevChapterId(prevChapter != null ? prevChapter.getChapterId() : null);
         
         // 查询下一章
         LambdaQueryWrapper<Chapter> nextWrapper = new LambdaQueryWrapper<>();
@@ -54,7 +54,7 @@ public class ChapterServiceImpl extends ServiceImpl<ChapterMapper, Chapter> impl
                    .orderByAsc(Chapter::getOrderNum)
                    .last("LIMIT 1");
         Chapter nextChapter = getOne(nextWrapper);
-        content.setNextChapterId(nextChapter != null ? nextChapter.getId() : null);
+        content.setNextChapterId(nextChapter != null ? nextChapter.getChapterId() : null);
         
         return content;
     }
@@ -80,7 +80,7 @@ public class ChapterServiceImpl extends ServiceImpl<ChapterMapper, Chapter> impl
     private void updateNovelWordCount(Long novelId) {
         LambdaQueryWrapper<Chapter> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Chapter::getNovelId, novelId)
-               .select(Chapter::getId);
+               .select(Chapter::getChapterId);
         Long count = count(wrapper);
         
         // 这里简化处理，实际应该累加所有章节字数

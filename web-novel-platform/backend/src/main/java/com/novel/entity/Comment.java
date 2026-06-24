@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 @TableName("comment")
 public class Comment {
     
-    @TableId(type = IdType.AUTO)
-    private Long id;
+    @TableId(value = "comment_id", type = IdType.AUTO)
+    private Long commentId;
     
     private Long chapterId;
     

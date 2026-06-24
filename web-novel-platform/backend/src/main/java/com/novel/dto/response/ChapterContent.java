@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Data
 public class ChapterContent {
     
-    private Long id;
+    private Long chapterId;
     private Long novelId;
     private String title;
     private String content;

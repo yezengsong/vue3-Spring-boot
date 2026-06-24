@@ -63,7 +63,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         
         // 生成 Token
-        String token = jwtTokenProvider.createToken(user.getId(), user.getUsername(), user.getRole());
+        String token = jwtTokenProvider.createToken(user.getUserId(), user.getUsername(), user.getRole());
         
         // 返回登录信息
         LoginResponse response = new LoginResponse();

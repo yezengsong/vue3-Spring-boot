@@ -22,7 +22,7 @@
         <el-col :span="8">
           <el-card class="novel-info-card">
             <div class="novel-cover">
-              <el-image :src="novel.cover || '/default-cover.png'" fit="cover" />
+              <el-image :src="novel.cover || '/image/default-cover.png'" fit="cover" />
             </div>
             <h1 class="novel-title">{{ novel.title }}</h1>
             <p class="novel-author">作者：{{ novel.author }}</p>
@@ -57,9 +57,9 @@
             <div class="chapter-list">
               <el-button
                 v-for="chapter in novel.chapters"
-                :key="chapter.id"
+                :key="chapter.chapterId"
                 text
-                @click="goToChapter(chapter.id)"
+                @click="goToChapter(chapter.chapterId)"
               >
                 {{ chapter.title }}
               </el-button>
@@ -88,7 +88,7 @@ const novel = ref(null)
 const bookmarkedNovels = ref([])
 
 const isBookmarked = computed(() => {
-  return bookmarkedNovels.value.some(b => b.novelId === novel.value?.id)
+  return bookmarkedNovels.value.some(b => b.novelId === novel.value?.novelId)
 })
 
 onMounted(async () => {
@@ -129,12 +129,12 @@ function formatWordCount(count) {
 function startReading() {
   if (novel.value?.chapters?.length > 0) {
     const firstChapter = novel.value.chapters[0]
-    goToChapter(firstChapter.id)
+    goToChapter(firstChapter.chapterId)
   }
 }
 
 function goToChapter(chapterId) {
-  router.push(`/novel/${novel.value.id}/chapter/${chapterId}`)
+  router.push(`/novel/${novel.value.novelId}/chapter/${chapterId}`)
 }
 
 async function toggleBookmark() {
@@ -146,10 +146,10 @@ async function toggleBookmark() {
 
   try {
     if (isBookmarked.value) {
-      await unbookmark(novel.value.id)
+      await unbookmark(novel.value.novelId)
       ElMessage.success('已取消收藏')
     } else {
-      await bookmark(novel.value.id)
+      await bookmark(novel.value.novelId)
       ElMessage.success('已加入书架')
     }
     await loadBookmarks()

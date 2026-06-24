@@ -1,7 +1,9 @@
 package com.novel.controller;
 
 import com.novel.common.Result;
+import com.novel.dto.response.BookmarkDTO;
 import com.novel.entity.Bookmark;
+import com.novel.security.JwtUserDetails;
 import com.novel.service.BookmarkService;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,8 +50,26 @@ public class BookmarkController {
         return Result.success(bookmarks);
     }
     
+    /**
+     * 获取用户的书架详情列表（包含小说信息）
+     */
+    @GetMapping("/user/bookmarks/detail")
+    public Result<List<BookmarkDTO>> getUserBookmarkDetails(Principal principal) {
+        Long userId = getCurrentUserId(principal);
+        List<BookmarkDTO> bookmarks = bookmarkService.getUserBookmarkDetails(userId);
+        return Result.success(bookmarks);
+    }
+    
     private Long getCurrentUserId(Principal principal) {
-        // TODO: 从 principal 中获取用户 ID
-        return 1L;
+        if (principal instanceof org.springframework.security.core.Authentication) {
+            org.springframework.security.core.Authentication auth = 
+                (org.springframework.security.core.Authentication) principal;
+            Object principalObj = auth.getPrincipal();
+            if (principalObj instanceof JwtUserDetails) {
+                return ((JwtUserDetails) principalObj).getId();
+            }
+        }
+        // 如果无法从 Principal 中获取用户 ID，返回 null
+        return null;
     }
 }

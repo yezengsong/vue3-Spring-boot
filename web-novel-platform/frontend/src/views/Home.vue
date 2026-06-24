@@ -62,10 +62,10 @@
           <h2>热门推荐</h2>
         </div>
         <el-row :gutter="20">
-          <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="novel in novelList" :key="novel.id">
-            <el-card class="novel-card" shadow="hover" @click="goToNovel(novel.id)">
+          <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="novel in novelList" :key="novel.novelId">
+            <el-card class="novel-card" shadow="hover" @click="goToNovel(novel.novelId)">
               <div class="novel-cover">
-                <el-image :src="novel.cover || '/default-cover.png'" fit="cover" />
+                <el-image :src="novel.cover || '/image/default-cover.png'" fit="cover" />
               </div>
               <div class="novel-info">
                 <h3 class="novel-title">{{ novel.title }}</h3>
@@ -88,9 +88,9 @@
         </div>
         <el-table :data="rankList" style="width: 100%" :show-header="false">
           <el-table-column type="index" width="50" :index="indexMethod" />
-          <el-table-column prop="title" label="小说名称" @click="goToNovel(row.id)">
+          <el-table-column prop="title" label="小说名称">
             <template #default="{ row }">
-              <span class="rank-title" @click="goToNovel(row.id)">{{ row.title }}</span>
+              <span class="rank-title" @click="goToNovel(row.novelId)">{{ row.title }}</span>
             </template>
           </el-table-column>
           <el-table-column prop="clickCount" label="点击量" width="100" />
