@@ -22,6 +22,10 @@
             <el-icon><ChatDotRound /></el-icon>
             评论管理
           </el-menu-item>
+          <el-menu-item index="user" @click="activeMenu = 'user'">
+            <el-icon><User /></el-icon>
+            用户管理
+          </el-menu-item>
         </el-menu>
       </el-aside>
 
@@ -211,6 +215,76 @@
               </div>
             </el-card>
           </div>
+
+          <!-- 用户管理 -->
+          <div v-if="activeMenu === 'user'">
+            <el-card class="fixed-card">
+              <template #header>
+                <div class="card-header">
+                  <span>用户管理</span>
+                  <el-button v-if="isSuperAdmin" type="primary" @click="showAddAdminDialog = true">添加管理员</el-button>
+                </div>
+              </template>
+              <el-form :inline="true">
+                <el-form-item label="用户名">
+                  <el-input v-model="userQuery.username" placeholder="输入用户名搜索" clearable style="width: 200px" />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="loadUsers">查询</el-button>
+                </el-form-item>
+              </el-form>
+              <div class="card-body-wrapper">
+                <el-table :data="pagedUserList" v-loading="loading" max-height="528">
+                  <el-table-column prop="userId" label="ID" width="80" />
+                  <el-table-column prop="username" label="用户名" width="120" />
+                  <el-table-column prop="email" label="邮箱" width="180" />
+                  <el-table-column label="角色" width="120">
+                    <template #default="{ row }">
+                      <el-tag v-if="row.role === 'SUPER_ADMIN'" type="danger">超级管理员</el-tag>
+                      <el-tag v-else-if="row.role === 'ADMIN'" type="warning">管理员</el-tag>
+                      <el-tag v-else>普通用户</el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="状态" width="100">
+                    <template #default="{ row }">
+                      <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+                        {{ row.status === 1 ? '正常' : '封禁' }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="createTime" label="创建时间" width="180" />
+                  <el-table-column label="操作" width="200">
+                    <template #default="{ row }">
+                      <el-button
+                        v-if="row.status === 1"
+                        size="small"
+                        type="danger"
+                        @click="handleBanUser(row.userId)"
+                      >
+                        封禁
+                      </el-button>
+                      <el-button
+                        v-else
+                        size="small"
+                        type="success"
+                        @click="handleUnbanUser(row.userId)"
+                      >
+                        解封
+                      </el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+              <div class="card-footer">
+                <el-pagination
+                  v-model:current-page="userPage"
+                  :page-size="10"
+                  layout="prev, pager, next"
+                  :total="userList.length"
+                />
+              </div>
+            </el-card>
+          </div>
         </el-main>
       </el-container>
     </el-container>
@@ -297,6 +371,25 @@
         <el-button type="primary" @click="saveChapter">保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 添加管理员对话框 -->
+    <el-dialog v-model="showAddAdminDialog" title="添加管理员">
+      <el-form :model="adminForm" label-width="80px">
+        <el-form-item label="用户名">
+          <el-input v-model="adminForm.username" />
+        </el-form-item>
+        <el-form-item label="密码">
+          <el-input v-model="adminForm.password" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="adminForm.email" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showAddAdminDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleAddAdmin">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -306,14 +399,18 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Upload } from '@element-plus/icons-vue'
+import { Upload, User } from '@element-plus/icons-vue'
 import { uploadImage } from '@/api/upload'
+import { getUserList, updateUserStatus, addAdmin } from '@/api/user'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const activeMenu = ref('novel')
 const loading = ref(false)
+
+// 判断是否为超级管理员
+const isSuperAdmin = computed(() => userStore.user.role === 'SUPER_ADMIN')
 
 // 小说管理
 const novelList = ref([])
@@ -349,8 +446,21 @@ const pagedCommentList = computed(() => {
   return commentList.value.slice(start, start + 10)
 })
 
+// 用户管理
+const userList = ref([])
+const userPage = ref(1)
+const userQuery = ref({ username: '' })
+const showAddAdminDialog = ref(false)
+const adminForm = ref({})
+
+const pagedUserList = computed(() => {
+  const start = (userPage.value - 1) * 10
+  return userList.value.slice(start, start + 10)
+})
+
 onMounted(() => {
-  if (userStore.user.role !== 'ADMIN') {
+  const role = userStore.user.role
+  if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
     ElMessage.error('无权限访问')
     router.push('/')
     return
@@ -372,6 +482,13 @@ watch(showChapterDialog, (newVal) => {
   if (newVal && !chapterForm.value.chapterId) {
     // 新增模式，初始化表单
     chapterForm.value = { orderNum: 1 }
+  }
+})
+
+// 监听菜单切换，自动加载数据
+watch(activeMenu, (newVal) => {
+  if (newVal === 'user') {
+    loadUsers()
   }
 })
 
@@ -646,6 +763,67 @@ async function deleteComment(id) {
     loadComments()
   } catch (error) {
     console.error('删除失败:', error)
+  }
+}
+
+// 用户管理函数
+async function loadUsers() {
+  userPage.value = 1
+  loading.value = true
+  try {
+    const res = await getUserList({
+      page: 1,
+      size: 1000,
+      username: userQuery.value.username || undefined
+    })
+    const data = res.data || res
+    userList.value = data.records || []
+  } catch (error) {
+    console.error('加载用户列表失败:', error)
+    ElMessage.error('加载用户列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleBanUser(userId) {
+  await ElMessageBox.confirm('确定要封禁该用户吗？', '提示', { type: 'warning' })
+  try {
+    await updateUserStatus(userId, 0)
+    ElMessage.success('封禁成功')
+    loadUsers()
+  } catch (error) {
+    console.error('封禁失败:', error)
+    ElMessage.error('封禁失败')
+  }
+}
+
+async function handleUnbanUser(userId) {
+  await ElMessageBox.confirm('确定要解封该用户吗？', '提示', { type: 'warning' })
+  try {
+    await updateUserStatus(userId, 1)
+    ElMessage.success('解封成功')
+    loadUsers()
+  } catch (error) {
+    console.error('解封失败:', error)
+    ElMessage.error('解封失败')
+  }
+}
+
+async function handleAddAdmin() {
+  if (!adminForm.value.username || !adminForm.value.password) {
+    ElMessage.warning('用户名和密码不能为空')
+    return
+  }
+  try {
+    await addAdmin(adminForm.value)
+    ElMessage.success('添加管理员成功')
+    showAddAdminDialog.value = false
+    adminForm.value = {}
+    loadUsers()
+  } catch (error) {
+    console.error('添加管理员失败:', error)
+    ElMessage.error('添加管理员失败')
   }
 }
 </script>

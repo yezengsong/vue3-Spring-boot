@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .antMatchers("/api/category/**").permitAll()
                 .antMatchers("/image/**").permitAll()
                 // 需要认证的接口
-                .antMatchers("/api/admin/**").hasRole("ADMIN")
+                .antMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .antMatchers("/api/bookmark/**").authenticated()
                 // 其他接口需要认证
                 .anyRequest().authenticated()

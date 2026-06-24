@@ -1,18 +1,23 @@
 package com.novel.controller.admin;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.novel.common.Result;
 import com.novel.dto.request.CommentRequest;
 import com.novel.dto.response.CommentDTO;
 import com.novel.entity.Chapter;
 import com.novel.entity.Comment;
 import com.novel.entity.Novel;
+import com.novel.entity.User;
 import com.novel.service.ChapterService;
 import com.novel.service.CommentService;
 import com.novel.service.NovelService;
+import com.novel.service.UserService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -21,13 +26,16 @@ public class AdminController {
     private final NovelService novelService;
     private final ChapterService chapterService;
     private final CommentService commentService;
+    private final UserService userService;
     
     public AdminController(NovelService novelService, 
                           ChapterService chapterService,
-                          CommentService commentService) {
+                          CommentService commentService,
+                          UserService userService) {
         this.novelService = novelService;
         this.chapterService = chapterService;
         this.commentService = commentService;
+        this.userService = userService;
     }
     
     // ========== 小说管理 ==========
@@ -147,6 +155,47 @@ public class AdminController {
     @DeleteMapping("/comment/{id}")
     public Result<Void> deleteComment(@PathVariable Long id) {
         commentService.deleteComment(id);
+        return Result.success();
+    }
+    
+    // ========== 用户管理 ==========
+    
+    /**
+     * 获取用户列表（分页）
+     */
+    @GetMapping("/users")
+    public Result<IPage<User>> getUserList(@RequestParam(defaultValue = "1") int page,
+                                           @RequestParam(defaultValue = "10") int size,
+                                           @RequestParam(required = false) String username) {
+        IPage<User> userPage = userService.getUserList(page, size, username);
+        return Result.success(userPage);
+    }
+    
+    /**
+     * 封禁/解封用户
+     */
+    @PutMapping("/user/{id}/status")
+    public Result<Void> updateUserStatus(@PathVariable Long id,
+                                         @RequestParam Integer status) {
+        userService.updateUserStatus(id, status);
+        return Result.success();
+    }
+    
+    /**
+     * 添加管理员（仅超级管理员可用）
+     */
+    @PostMapping("/admin")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public Result<Void> addAdmin(@RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+        String email = request.get("email");
+        
+        if (username == null || password == null) {
+            return Result.error("用户名和密码不能为空");
+        }
+        
+        userService.addAdmin(username, password, email);
         return Result.success();
     }
 }

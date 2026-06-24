@@ -52,6 +52,11 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Comment createComment(Long chapterId, Long userId, CommentRequest request) {
+        User user = userService.getById(userId);
+        if (user == null || user.getStatus() != 1) {
+            throw new RuntimeException("您的账号已被封禁，无法发表评论");
+        }
+        
         Comment comment = new Comment();
         comment.setChapterId(chapterId);
         comment.setUserId(userId);
@@ -67,6 +72,11 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Comment replyComment(Long chapterId, Long userId, CommentRequest request) {
+        User user = userService.getById(userId);
+        if (user == null || user.getStatus() != 1) {
+            throw new RuntimeException("您的账号已被封禁，无法发表评论");
+        }
+        
         Comment comment = new Comment();
         comment.setChapterId(chapterId);
         comment.setUserId(userId);

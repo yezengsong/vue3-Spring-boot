@@ -19,3 +19,18 @@ export function getUserInfo() {
 export function updateUserInfo(data) {
   return request.put('/user/info', data)
 }
+
+// 获取用户列表（管理员）
+export function getUserList(params) {
+  return request.get('/admin/users', { params })
+}
+
+// 更新用户状态（封禁/解封）
+export function updateUserStatus(userId, status) {
+  return request.put(`/admin/user/${userId}/status`, null, { params: { status } })
+}
+
+// 添加管理员（超级管理员）
+export function addAdmin(data) {
+  return request.post('/admin/admin', data)
+}

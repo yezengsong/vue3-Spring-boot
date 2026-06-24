@@ -32,4 +32,19 @@ public interface UserService extends IService<User> {
      * 更新用户信息
      */
     void updateUserInfo(Long userId, User user);
+    
+    /**
+     * 获取用户列表（分页）
+     */
+    com.baomidou.mybatisplus.core.metadata.IPage<User> getUserList(int page, int size, String username);
+    
+    /**
+     * 封禁/解封用户
+     */
+    void updateUserStatus(Long userId, Integer status);
+    
+    /**
+     * 添加管理员（仅超级管理员可用）
+     */
+    void addAdmin(String username, String password, String email);
 }

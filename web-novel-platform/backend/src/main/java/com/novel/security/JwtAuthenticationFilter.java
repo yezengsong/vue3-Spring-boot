@@ -14,7 +14,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -41,11 +42,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 
                 User user = userService.getById(userId);
                 if (user != null && user.getStatus() == 1) {
+                    List<org.springframework.security.core.GrantedAuthority> authorities = new ArrayList<>();
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                    
+                    // SUPER_ADMIN 同时拥有 ADMIN 权限
+                    if ("SUPER_ADMIN".equals(role)) {
+                        authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+                    }
+                    
                     JwtUserDetails userDetails = new JwtUserDetails(
                         user.getUserId(),
                         user.getUsername(),
                         user.getPassword(),
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                        authorities
                     );
                     
                     JwtAuthenticationToken authentication = new JwtAuthenticationToken(
