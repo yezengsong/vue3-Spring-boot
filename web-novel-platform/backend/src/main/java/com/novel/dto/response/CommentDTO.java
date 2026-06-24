@@ -46,4 +46,9 @@ public class CommentDTO {
      * 回复列表（仅一级评论包含）
      */
     private List<CommentDTO> replies;
+    
+    /**
+     * 当前用户是否已点赞
+     */
+    private Boolean isLiked;
 }

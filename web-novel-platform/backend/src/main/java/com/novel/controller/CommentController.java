@@ -26,8 +26,9 @@ public class CommentController {
      * 获取章节的评论列表
      */
     @GetMapping("/{chapterId}/comments")
-    public Result<List<CommentDTO>> getComments(@PathVariable Long chapterId) {
-        List<CommentDTO> comments = commentService.getCommentsByChapterId(chapterId);
+    public Result<List<CommentDTO>> getComments(@PathVariable Long chapterId, Principal principal) {
+        Long userId = getCurrentUserId(principal);
+        List<CommentDTO> comments = commentService.getCommentsByChapterId(chapterId, userId);
         return Result.success(comments);
     }
     
@@ -61,8 +62,25 @@ public class CommentController {
      * 点赞评论
      */
     @PostMapping("/comments/{commentId}/like")
-    public Result<Void> likeComment(@PathVariable Long commentId) {
-        commentService.likeComment(commentId);
+    public Result<Void> likeComment(@PathVariable Long commentId, Principal principal) {
+        Long userId = getCurrentUserId(principal);
+        if (userId == null) {
+            return Result.error("未登录");
+        }
+        commentService.likeComment(commentId, userId);
+        return Result.success();
+    }
+    
+    /**
+     * 取消点赞评论
+     */
+    @DeleteMapping("/comments/{commentId}/like")
+    public Result<Void> unlikeComment(@PathVariable Long commentId, Principal principal) {
+        Long userId = getCurrentUserId(principal);
+        if (userId == null) {
+            return Result.error("未登录");
+        }
+        commentService.unlikeComment(commentId, userId);
         return Result.success();
     }
     

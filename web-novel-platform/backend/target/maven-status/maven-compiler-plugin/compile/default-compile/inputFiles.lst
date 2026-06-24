@@ -1,6 +1,7 @@
 D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\controller\FileUploadController.java
 D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\dto\request\NovelQuery.java
 D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\controller\admin\AdminController.java
+D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\entity\CommentLike.java
 D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\service\impl\ChapterServiceImpl.java
 D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\controller\NovelController.java
 D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\entity\Category.java
@@ -14,6 +15,7 @@ D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\controller
 D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\mapper\ReadHistoryMapper.java
 D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\service\NovelService.java
 D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\service\ChapterService.java
+D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\mapper\CommentLikeMapper.java
 D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\dto\request\RegisterRequest.java
 D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\controller\BookmarkController.java
 D:\course work\web\web-novel-platform\backend\src\main\java\com\novel\entity\Bookmark.java

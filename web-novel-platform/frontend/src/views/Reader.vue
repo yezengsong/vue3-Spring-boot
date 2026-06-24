@@ -73,7 +73,7 @@
             </div>
             <div class="comment-content">{{ comment.content }}</div>
             <div class="comment-actions">
-              <el-button text size="small" @click="likeComment(comment)">
+              <el-button text size="small" @click="likeComment(comment)" :class="{ 'liked': comment.isLiked }">
                 <el-icon><ThumbUp /></el-icon>
                 {{ comment.likeCount }}
               </el-button>
@@ -111,7 +111,7 @@
                 </div>
                 <div class="reply-content">{{ reply.content }}</div>
                 <div class="reply-actions-small">
-                  <el-button text size="small" @click="likeComment(reply)">
+                  <el-button text size="small" @click="likeComment(reply)" :class="{ 'liked': reply.isLiked }">
                     <el-icon><ThumbUp /></el-icon>
                     {{ reply.likeCount }}
                   </el-button>
@@ -129,7 +129,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getChapterContent, getChapters } from '@/api/chapter'
-import { getComments, createComment, replyComment, likeComment as apiLikeComment } from '@/api/comment'
+import { getComments, createComment, replyComment, likeComment as apiLikeComment, unlikeComment as apiUnlikeComment } from '@/api/comment'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
@@ -270,11 +270,24 @@ async function submitComment() {
 
 async function likeComment(comment) {
   try {
-    await apiLikeComment(comment.commentId)
-    comment.likeCount++
-    ElMessage.success('点赞成功')
+    if (comment.isLiked) {
+      await apiUnlikeComment(comment.commentId)
+      comment.likeCount = Math.max(comment.likeCount - 1, 0)
+      comment.isLiked = false
+      ElMessage.success('已取消点赞')
+    } else {
+      await apiLikeComment(comment.commentId)
+      comment.likeCount++
+      comment.isLiked = true
+      ElMessage.success('点赞成功')
+    }
   } catch (error) {
-    console.error('点赞失败:', error)
+    console.error('操作失败:', error)
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message)
+    } else {
+      ElMessage.error('操作失败，请重试')
+    }
   }
 }
 
@@ -524,5 +537,42 @@ function formatTime(time) {
 .comment-actions {
   display: flex;
   gap: 12px;
+  margin-top: 8px;
+}
+
+.comment-actions .el-button {
+  padding: 4px 8px;
+  min-height: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #606266;
+  font-size: 13px;
+}
+
+.comment-actions .el-button.liked {
+  color: #409eff;
+}
+
+.comment-actions .el-button.liked .el-icon {
+  color: #409eff;
+}
+
+.comment-actions .el-button .el-icon {
+  font-size: 14px;
+}
+
+.reply-actions-small .el-button.liked {
+  color: #409eff;
+}
+
+.reply-actions-small .el-button {
+  padding: 2px 6px;
+  min-height: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #606266;
+  font-size: 12px;
 }
 </style>

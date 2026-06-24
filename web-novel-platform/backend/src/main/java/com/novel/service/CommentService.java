@@ -12,7 +12,7 @@ public interface CommentService extends IService<Comment> {
     /**
      * 获取章节的评论列表
      */
-    List<CommentDTO> getCommentsByChapterId(Long chapterId);
+    List<CommentDTO> getCommentsByChapterId(Long chapterId, Long currentUserId);
     
     /**
      * 发表评论
@@ -27,7 +27,12 @@ public interface CommentService extends IService<Comment> {
     /**
      * 点赞评论
      */
-    void likeComment(Long commentId);
+    void likeComment(Long commentId, Long userId);
+    
+    /**
+     * 取消点赞评论
+     */
+    void unlikeComment(Long commentId, Long userId);
     
     /**
      * 审核评论

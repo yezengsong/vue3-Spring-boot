@@ -1,3 +1,4 @@
+com\novel\mapper\CommentLikeMapper.class
 com\novel\entity\ReadHistory.class
 com\novel\config\WebMvcConfig.class
 com\novel\security\JwtAuthenticationFilter.class

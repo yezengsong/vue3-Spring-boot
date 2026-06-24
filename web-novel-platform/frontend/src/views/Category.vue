@@ -11,7 +11,7 @@
           <el-menu-item index="/">首页</el-menu-item>
           <el-menu-item index="/category">分类</el-menu-item>
           <el-menu-item index="/user/profile" v-if="userStore.token">个人中心</el-menu-item>
-          <el-menu-item index="/admin" v-if="userStore.token && userStore.user.role === 'ADMIN'">后台管理</el-menu-item>
+          <el-menu-item index="/admin" v-if="userStore.token && (userStore.user.role === 'ADMIN' || userStore.user.role === 'SUPER_ADMIN')">后台管理</el-menu-item>
         </el-menu>
       </div>
     </el-header>

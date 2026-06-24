@@ -7,8 +7,10 @@ import com.novel.dto.request.CommentRequest;
 import com.novel.dto.response.CommentDTO;
 import com.novel.entity.Chapter;
 import com.novel.entity.Comment;
+import com.novel.entity.CommentLike;
 import com.novel.entity.Novel;
 import com.novel.entity.User;
+import com.novel.mapper.CommentLikeMapper;
 import com.novel.mapper.CommentMapper;
 import com.novel.service.ChapterService;
 import com.novel.service.CommentService;
@@ -26,15 +28,17 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     private final UserService userService;
     private final ChapterService chapterService;
     private final NovelService novelService;
+    private final CommentLikeMapper commentLikeMapper;
     
-    public CommentServiceImpl(UserService userService, ChapterService chapterService, NovelService novelService) {
+    public CommentServiceImpl(UserService userService, ChapterService chapterService, NovelService novelService, CommentLikeMapper commentLikeMapper) {
         this.userService = userService;
         this.chapterService = chapterService;
         this.novelService = novelService;
+        this.commentLikeMapper = commentLikeMapper;
     }
     
     @Override
-    public List<CommentDTO> getCommentsByChapterId(Long chapterId) {
+    public List<CommentDTO> getCommentsByChapterId(Long chapterId, Long currentUserId) {
         // 查询一级评论（已审核通过的）
         LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Comment::getChapterId, chapterId)
@@ -45,7 +49,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         List<Comment> comments = list(wrapper);
         
         return comments.stream()
-            .map(this::convertToDTO)
+            .map(c -> convertToDTO(c, currentUserId))
             .collect(Collectors.toList());
     }
     
@@ -91,10 +95,50 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void likeComment(Long commentId) {
+    public void likeComment(Long commentId, Long userId) {
+        // 检查用户是否已点赞
+        LambdaQueryWrapper<CommentLike> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CommentLike::getCommentId, commentId)
+               .eq(CommentLike::getUserId, userId);
+        
+        CommentLike existingLike = commentLikeMapper.selectOne(wrapper);
+        if (existingLike != null) {
+            throw new RuntimeException("您已经点赞过该评论");
+        }
+        
+        // 记录点赞
+        CommentLike commentLike = new CommentLike();
+        commentLike.setCommentId(commentId);
+        commentLike.setUserId(userId);
+        commentLikeMapper.insert(commentLike);
+        
+        // 增加评论点赞数
         baseMapper.update(null,
             new LambdaUpdateWrapper<Comment>()
                 .setSql("like_count = like_count + 1")
+                .eq(Comment::getCommentId, commentId));
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void unlikeComment(Long commentId, Long userId) {
+        // 检查用户是否已点赞
+        LambdaQueryWrapper<CommentLike> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CommentLike::getCommentId, commentId)
+               .eq(CommentLike::getUserId, userId);
+        
+        CommentLike existingLike = commentLikeMapper.selectOne(wrapper);
+        if (existingLike == null) {
+            throw new RuntimeException("您尚未点赞该评论");
+        }
+        
+        // 删除点赞记录
+        commentLikeMapper.delete(wrapper);
+        
+        // 减少评论点赞数
+        baseMapper.update(null,
+            new LambdaUpdateWrapper<Comment>()
+                .setSql("like_count = GREATEST(like_count - 1, 0)")
                 .eq(Comment::getCommentId, commentId));
     }
     
@@ -143,7 +187,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         List<Comment> comments = list(wrapper);
         
         return comments.stream()
-            .map(this::convertToDTO)
+            .map(c -> convertToDTO(c, null))
             .collect(Collectors.toList());
     }
     
@@ -157,11 +201,11 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         List<Comment> comments = list(wrapper);
         
         return comments.stream()
-            .map(this::convertToDTO)
+            .map(c -> convertToDTO(c, userId))
             .collect(Collectors.toList());
     }
     
-    private CommentDTO convertToDTO(Comment comment) {
+    private CommentDTO convertToDTO(Comment comment, Long currentUserId) {
         CommentDTO dto = new CommentDTO();
         dto.setCommentId(comment.getCommentId());
         dto.setChapterId(comment.getChapterId());
@@ -204,13 +248,23 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         
         // 获取该评论的回复列表（一级评论才需要）
         if (comment.getParentId() == null) {
-            dto.setReplies(getRepliesByParentId(comment.getCommentId()));
+            dto.setReplies(getRepliesByParentId(comment.getCommentId(), currentUserId));
+        }
+        
+        // 检查当前用户是否已点赞
+        if (currentUserId != null) {
+            LambdaQueryWrapper<CommentLike> likeWrapper = new LambdaQueryWrapper<>();
+            likeWrapper.eq(CommentLike::getCommentId, comment.getCommentId())
+                       .eq(CommentLike::getUserId, currentUserId);
+            dto.setIsLiked(commentLikeMapper.selectOne(likeWrapper) != null);
+        } else {
+            dto.setIsLiked(false);
         }
         
         return dto;
     }
     
-    private List<CommentDTO> getRepliesByParentId(Long parentId) {
+    private List<CommentDTO> getRepliesByParentId(Long parentId, Long currentUserId) {
         LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Comment::getParentId, parentId)
                .eq(Comment::getStatus, 1)  // 已审核通过
@@ -218,7 +272,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         
         List<Comment> replies = list(wrapper);
         return replies.stream()
-            .map(this::convertToDTO)
+            .map(r -> convertToDTO(r, currentUserId))
             .collect(Collectors.toList());
     }
 }

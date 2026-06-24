@@ -20,6 +20,11 @@ export function likeComment(commentId) {
   return request.post(`/chapter/comments/${commentId}/like`)
 }
 
+// 取消点赞评论
+export function unlikeComment(commentId) {
+  return request.delete(`/chapter/comments/${commentId}/like`)
+}
+
 // 获取当前用户的评论列表
 export function getMyComments() {
   return request.get('/chapter/my')
