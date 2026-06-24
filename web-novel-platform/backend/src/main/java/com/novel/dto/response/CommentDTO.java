@@ -23,6 +23,21 @@ public class CommentDTO {
     private LocalDateTime createTime;
     
     /**
+     * 章节标题
+     */
+    private String chapterTitle;
+    
+    /**
+     * 小说 ID
+     */
+    private Long novelId;
+    
+    /**
+     * 小说标题
+     */
+    private String novelTitle;
+    
+    /**
      * 回复的用户名（如果是回复评论）
      */
     private String replyToUsername;

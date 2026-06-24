@@ -43,4 +43,9 @@ public interface CommentService extends IService<Comment> {
      * 按小说 ID 查询评论列表（包含章节信息）
      */
     List<CommentDTO> getCommentsByNovelId(Long novelId);
+    
+    /**
+     * 按用户 ID 查询评论列表
+     */
+    List<CommentDTO> getCommentsByUserId(Long userId);
 }

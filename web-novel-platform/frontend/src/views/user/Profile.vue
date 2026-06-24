@@ -9,7 +9,7 @@
         <el-menu mode="horizontal" :ellipsis="false" router>
           <el-menu-item index="/">首页</el-menu-item>
           <el-menu-item index="/category">分类</el-menu-item>
-          <el-menu-item index="/user/profile" v-if="userStore.token">我的书架</el-menu-item>
+          <el-menu-item index="/user/profile" v-if="userStore.token">个人中心</el-menu-item>
           <el-menu-item index="/admin" v-if="userStore.token && userStore.user.role === 'ADMIN'">后台管理</el-menu-item>
         </el-menu>
       </div>
@@ -20,24 +20,33 @@
         <el-col :span="6">
           <el-card>
             <div class="user-info">
-              <el-avatar :size="80" :src="userStore.user.avatar" />
-              <h3>{{ userStore.user.username }}</h3>
-              <p>{{ userStore.user.email || '未设置邮箱' }}</p>
+              <el-avatar :size="80" :src="userInfo.avatar" />
+              <h3>{{ userInfo.username }}</h3>
+              <p>{{ userInfo.email || '未设置邮箱' }}</p>
             </div>
-            <el-menu>
-              <el-menu-item index="1" @click="switchTab('bookmarks')">
+            <el-menu :default-active="activeTab">
+              <el-menu-item index="bookmarks" @click="switchTab('bookmarks')">
                 <el-icon><Collection /></el-icon>
                 我的书架
               </el-menu-item>
-              <el-menu-item index="2" @click="switchTab('history')">
+              <el-menu-item index="history" @click="switchTab('history')">
                 <el-icon><Clock /></el-icon>
                 阅读历史
+              </el-menu-item>
+              <el-menu-item index="comments" @click="switchTab('comments')">
+                <el-icon><ChatDotRound /></el-icon>
+                我的评论
+              </el-menu-item>
+              <el-menu-item index="settings" @click="switchTab('settings')">
+                <el-icon><Setting /></el-icon>
+                个人信息
               </el-menu-item>
             </el-menu>
           </el-card>
         </el-col>
 
         <el-col :span="18">
+          <!-- 我的书架 -->
           <el-card v-if="activeTab === 'bookmarks'">
             <template #header>我的书架</template>
             <div class="bookmark-list" v-loading="loading">
@@ -69,6 +78,7 @@
             </div>
           </el-card>
 
+          <!-- 阅读历史 -->
           <el-card v-if="activeTab === 'history'">
             <template #header>阅读历史</template>
             <div class="history-list" v-loading="loading">
@@ -95,6 +105,78 @@
               <el-empty v-if="!loading && historyList.length === 0" description="暂无阅读历史" />
             </div>
           </el-card>
+
+          <!-- 我的评论 -->
+          <el-card v-if="activeTab === 'comments'">
+            <template #header>我的评论</template>
+            <div class="comment-list" v-loading="loading">
+              <div v-for="comment in commentList" :key="comment.commentId" class="comment-item">
+                <div class="comment-header">
+                  <el-avatar :size="40" :src="comment.avatar" />
+                  <div class="comment-meta">
+                    <span class="comment-username">{{ comment.username }}</span>
+                    <span class="comment-time">{{ formatTime(comment.createTime) }}</span>
+                  </div>
+                </div>
+                <div class="comment-content">
+                  <p v-if="comment.replyToUsername" class="reply-info">
+                    回复 <span class="reply-target">@{{ comment.replyToUsername }}</span>
+                  </p>
+                  <p>{{ comment.content }}</p>
+                </div>
+                <div class="comment-footer">
+                  <span class="comment-source" @click="goToChapter(comment.novelId, comment.chapterId)">
+                    来自：{{ comment.novelTitle }} - {{ comment.chapterTitle }}
+                  </span>
+                  <div class="comment-actions">
+                    <el-button size="small" @click="goToChapter(comment.novelId, comment.chapterId)">
+                      查看原文
+                    </el-button>
+                    <el-popconfirm
+                      title="确定删除这条评论吗？"
+                      @confirm="handleDeleteComment(comment.commentId)"
+                    >
+                      <template #reference>
+                        <el-button size="small" type="danger">删除</el-button>
+                      </template>
+                    </el-popconfirm>
+                  </div>
+                </div>
+              </div>
+              <el-empty v-if="!loading && commentList.length === 0" description="暂无评论" />
+            </div>
+          </el-card>
+
+          <!-- 个人信息 -->
+          <el-card v-if="activeTab === 'settings'">
+            <template #header>个人信息</template>
+            <el-form :model="userForm" label-width="100px" style="max-width: 500px;">
+              <el-form-item label="用户名">
+                <el-input v-model="userForm.username" disabled />
+              </el-form-item>
+              <el-form-item label="邮箱">
+                <el-input v-model="userForm.email" placeholder="请输入邮箱" />
+              </el-form-item>
+              <el-form-item label="头像">
+                <el-upload
+                  class="avatar-uploader"
+                  action=""
+                  :auto-upload="false"
+                  :show-file-list="false"
+                  :on-change="handleAvatarUpload"
+                  accept="image/*"
+                >
+                  <el-button :icon="Upload" size="small">选择图片上传</el-button>
+                </el-upload>
+                <el-avatar v-if="userForm.avatar" :size="80" :src="userForm.avatar" style="margin-top: 10px;" />
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" @click="handleUpdateUserInfo" :loading="updating">
+                  保存修改
+                </el-button>
+              </el-form-item>
+            </el-form>
+          </el-card>
         </el-col>
       </el-row>
     </el-main>
@@ -107,15 +189,31 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getBookmarkDetails } from '@/api/bookmark'
 import { getReadHistory } from '@/api/history'
-import { Reading, Collection, Clock } from '@element-plus/icons-vue'
+import { getMyComments, deleteMyComment } from '@/api/comment'
+import { getUserInfo, updateUserInfo } from '@/api/user'
+import { uploadImage } from '@/api/upload'
+import { ElMessage } from 'element-plus'
+import { Reading, Collection, Clock, ChatDotRound, Setting, Upload } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const activeTab = ref('bookmarks')
 const loading = ref(false)
+const updating = ref(false)
 const bookmarks = ref([])
 const historyList = ref([])
+const commentList = ref([])
+const userInfo = ref({
+  username: userStore.user.username || '',
+  email: userStore.user.email || '',
+  avatar: userStore.user.avatar || ''
+})
+const userForm = ref({
+  username: userStore.user.username || '',
+  email: userStore.user.email || '',
+  avatar: userStore.user.avatar || ''
+})
 
 async function loadBookmarks() {
   loading.value = true
@@ -141,10 +239,78 @@ async function loadHistory() {
   }
 }
 
+async function loadComments() {
+  loading.value = true
+  try {
+    const res = await getMyComments()
+    commentList.value = res.data
+  } catch (error) {
+    console.error('加载评论失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadUserInfo() {
+  try {
+    const res = await getUserInfo()
+    if (res.data) {
+      userInfo.value = res.data
+      userForm.value = {
+        username: res.data.username || '',
+        email: res.data.email || '',
+        avatar: res.data.avatar || ''
+      }
+      userStore.setUser(res.data)
+    }
+  } catch (error) {
+    console.error('加载用户信息失败:', error)
+  }
+}
+
+async function handleUpdateUserInfo() {
+  updating.value = true
+  try {
+    await updateUserInfo({
+      email: userForm.value.email,
+      avatar: userForm.value.avatar
+    })
+    ElMessage.success('更新成功')
+    userInfo.value = { ...userForm.value }
+    userStore.setUser({ ...userStore.user, ...userForm.value })
+  } catch (error) {
+    ElMessage.error('更新失败')
+  } finally {
+    updating.value = false
+  }
+}
+
+async function handleDeleteComment(commentId) {
+  try {
+    await deleteMyComment(commentId)
+    ElMessage.success('删除成功')
+    commentList.value = commentList.value.filter(c => c.commentId !== commentId)
+  } catch (error) {
+    ElMessage.error('删除失败')
+  }
+}
+
+async function handleAvatarUpload(file) {
+  try {
+    const res = await uploadImage(file.raw)
+    userForm.value.avatar = res.data
+    ElMessage.success('头像上传成功')
+  } catch (error) {
+    ElMessage.error('头像上传失败')
+  }
+}
+
 function switchTab(tab) {
   activeTab.value = tab
   if (tab === 'history' && historyList.value.length === 0) {
     loadHistory()
+  } else if (tab === 'comments' && commentList.value.length === 0) {
+    loadComments()
   }
 }
 
@@ -165,8 +331,13 @@ function goToNovel(novelId) {
   router.push(`/novel/${novelId}`)
 }
 
+function goToChapter(novelId, chapterId) {
+  router.push(`/novel/${novelId}/chapter/${chapterId}`)
+}
+
 onMounted(() => {
   loadBookmarks()
+  loadUserInfo()
 })
 </script>
 
@@ -224,7 +395,8 @@ onMounted(() => {
 }
 
 .bookmark-list,
-.history-list {
+.history-list,
+.comment-list {
   min-height: 300px;
 }
 
@@ -319,5 +491,72 @@ onMounted(() => {
 .bookmark-time,
 .history-time {
   color: #999;
+}
+
+.comment-item {
+  padding: 16px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.comment-item:last-child {
+  border-bottom: none;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.comment-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.comment-username {
+  font-weight: 500;
+  color: #333;
+}
+
+.comment-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.comment-content {
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.reply-info {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 8px;
+}
+
+.reply-target {
+  color: #409eff;
+}
+
+.comment-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comment-source {
+  font-size: 12px;
+  color: #409eff;
+  cursor: pointer;
+}
+
+.comment-source:hover {
+  text-decoration: underline;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 8px;
 }
 </style>

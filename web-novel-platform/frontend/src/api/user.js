@@ -14,3 +14,8 @@ export function login(data) {
 export function getUserInfo() {
   return request.get('/user/info')
 }
+
+// 更新用户信息
+export function updateUserInfo(data) {
+  return request.put('/user/info', data)
+}

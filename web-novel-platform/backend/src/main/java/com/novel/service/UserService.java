@@ -27,4 +27,9 @@ public interface UserService extends IService<User> {
      * 根据 ID 查询用户
      */
     User getById(Long id);
+    
+    /**
+     * 更新用户信息
+     */
+    void updateUserInfo(Long userId, User user);
 }

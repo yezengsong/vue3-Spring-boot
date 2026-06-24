@@ -237,6 +237,25 @@
         <el-form-item label="简介">
           <el-input v-model="novelForm.description" type="textarea" :rows="4" />
         </el-form-item>
+        <el-form-item label="封面">
+          <el-input v-model="novelForm.cover" placeholder="请输入封面 URL" style="margin-bottom: 10px;" />
+          <el-upload
+            class="cover-uploader"
+            action=""
+            :auto-upload="false"
+            :show-file-list="false"
+            :on-change="handleCoverUpload"
+            accept="image/*"
+          >
+            <el-button :icon="Upload" size="small">选择图片上传</el-button>
+          </el-upload>
+          <el-image 
+            v-if="novelForm.cover" 
+            :src="novelForm.cover" 
+            fit="cover" 
+            style="width: 120px; height: 160px; margin-top: 10px; border-radius: 4px;" 
+          />
+        </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="novelForm.status">
             <el-option label="连载" :value="1" />
@@ -287,6 +306,8 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Upload } from '@element-plus/icons-vue'
+import { uploadImage } from '@/api/upload'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -471,6 +492,16 @@ async function saveNovel() {
     } else {
       ElMessage.error('保存失败，请重试')
     }
+  }
+}
+
+async function handleCoverUpload(file) {
+  try {
+    const res = await uploadImage(file.raw)
+    novelForm.value.cover = res.data
+    ElMessage.success('封面上传成功')
+  } catch (error) {
+    ElMessage.error('封面上传失败')
   }
 }
 

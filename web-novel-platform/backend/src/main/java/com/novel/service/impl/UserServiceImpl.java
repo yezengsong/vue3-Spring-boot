@@ -84,4 +84,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public User getById(Long id) {
         return baseMapper.selectById(id);
     }
+    
+    @Override
+    public void updateUserInfo(Long userId, User user) {
+        User existingUser = getById(userId);
+        if (existingUser == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        
+        // 只允许更新部分字段
+        if (user.getEmail() != null) {
+            existingUser.setEmail(user.getEmail());
+        }
+        if (user.getAvatar() != null) {
+            existingUser.setAvatar(user.getAvatar());
+        }
+        
+        updateById(existingUser);
+    }
 }

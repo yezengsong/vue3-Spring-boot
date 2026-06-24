@@ -66,6 +66,32 @@ public class CommentController {
         return Result.success();
     }
     
+    /**
+     * 获取当前用户的评论列表
+     */
+    @GetMapping("/my")
+    public Result<List<CommentDTO>> getMyComments(Principal principal) {
+        Long userId = getCurrentUserId(principal);
+        if (userId == null) {
+            return Result.error("未登录");
+        }
+        List<CommentDTO> comments = commentService.getCommentsByUserId(userId);
+        return Result.success(comments);
+    }
+    
+    /**
+     * 删除自己的评论
+     */
+    @DeleteMapping("/my/{commentId}")
+    public Result<Void> deleteMyComment(@PathVariable Long commentId, Principal principal) {
+        Long userId = getCurrentUserId(principal);
+        if (userId == null) {
+            return Result.error("未登录");
+        }
+        commentService.deleteComment(commentId);
+        return Result.success();
+    }
+    
     private Long getCurrentUserId(Principal principal) {
         if (principal instanceof org.springframework.security.core.Authentication) {
             org.springframework.security.core.Authentication auth = 

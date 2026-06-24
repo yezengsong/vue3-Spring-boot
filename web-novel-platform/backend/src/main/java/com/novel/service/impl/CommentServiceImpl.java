@@ -7,10 +7,12 @@ import com.novel.dto.request.CommentRequest;
 import com.novel.dto.response.CommentDTO;
 import com.novel.entity.Chapter;
 import com.novel.entity.Comment;
+import com.novel.entity.Novel;
 import com.novel.entity.User;
 import com.novel.mapper.CommentMapper;
 import com.novel.service.ChapterService;
 import com.novel.service.CommentService;
+import com.novel.service.NovelService;
 import com.novel.service.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,10 +25,12 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     
     private final UserService userService;
     private final ChapterService chapterService;
+    private final NovelService novelService;
     
-    public CommentServiceImpl(UserService userService, ChapterService chapterService) {
+    public CommentServiceImpl(UserService userService, ChapterService chapterService, NovelService novelService) {
         this.userService = userService;
         this.chapterService = chapterService;
+        this.novelService = novelService;
     }
     
     @Override
@@ -132,6 +136,20 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             .collect(Collectors.toList());
     }
     
+    @Override
+    public List<CommentDTO> getCommentsByUserId(Long userId) {
+        // 查询该用户的所有评论（包括一级和二级评论）
+        LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Comment::getUserId, userId)
+               .orderByDesc(Comment::getCreateTime);
+        
+        List<Comment> comments = list(wrapper);
+        
+        return comments.stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+    }
+    
     private CommentDTO convertToDTO(Comment comment) {
         CommentDTO dto = new CommentDTO();
         dto.setCommentId(comment.getCommentId());
@@ -148,6 +166,18 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         if (user != null) {
             dto.setUsername(user.getUsername());
             dto.setAvatar(user.getAvatar());
+        }
+        
+        // 获取章节和小说信息
+        Chapter chapter = chapterService.getById(comment.getChapterId());
+        if (chapter != null) {
+            dto.setChapterTitle(chapter.getTitle());
+            dto.setNovelId(chapter.getNovelId());
+            
+            Novel novel = novelService.getById(chapter.getNovelId());
+            if (novel != null) {
+                dto.setNovelTitle(novel.getTitle());
+            }
         }
         
         // 获取回复信息（如果是回复评论）

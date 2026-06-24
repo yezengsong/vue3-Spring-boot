@@ -35,6 +35,7 @@ com\novel\common\Result.class
 com\novel\config\SecurityConfig.class
 com\novel\dto\response\LoginResponse.class
 com\novel\controller\NovelController.class
+com\novel\controller\FileUploadController.class
 com\novel\service\impl\UserServiceImpl.class
 com\novel\mapper\ReadHistoryMapper.class
 com\novel\service\CategoryService.class

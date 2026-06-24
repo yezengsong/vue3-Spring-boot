@@ -5,7 +5,10 @@ import com.novel.dto.request.LoginRequest;
 import com.novel.dto.request.RegisterRequest;
 import com.novel.dto.response.LoginResponse;
 import com.novel.entity.User;
+import com.novel.security.JwtUserDetails;
 import com.novel.service.UserService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -51,7 +54,26 @@ public class UserController {
      */
     @GetMapping("/info")
     public Result<User> getUserInfo() {
-        // 从 SecurityContext 获取当前用户
-        return Result.success(null);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof JwtUserDetails) {
+            JwtUserDetails userDetails = (JwtUserDetails) authentication.getPrincipal();
+            User user = userService.getById(userDetails.getId());
+            return Result.success(user);
+        }
+        return Result.error("未登录");
+    }
+    
+    /**
+     * 更新用户信息
+     */
+    @PutMapping("/info")
+    public Result<Void> updateUserInfo(@RequestBody User user) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof JwtUserDetails) {
+            JwtUserDetails userDetails = (JwtUserDetails) authentication.getPrincipal();
+            userService.updateUserInfo(userDetails.getId(), user);
+            return Result.success();
+        }
+        return Result.error("未登录");
     }
 }

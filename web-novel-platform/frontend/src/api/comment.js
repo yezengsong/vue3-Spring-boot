@@ -19,3 +19,13 @@ export function replyComment(chapterId, commentId, data) {
 export function likeComment(commentId) {
   return request.post(`/chapter/comments/${commentId}/like`)
 }
+
+// 获取当前用户的评论列表
+export function getMyComments() {
+  return request.get('/chapter/my')
+}
+
+// 删除当前用户的评论
+export function deleteMyComment(commentId) {
+  return request.delete(`/chapter/my/${commentId}`)
+}
