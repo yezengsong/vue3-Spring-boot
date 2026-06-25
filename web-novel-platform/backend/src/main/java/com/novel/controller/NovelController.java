@@ -48,4 +48,13 @@ public class NovelController {
         List<Novel> novels = novelService.getRecommend(novelId, limit);
         return Result.success(novels);
     }
+    
+    /**
+     * 增加点击量
+     */
+    @PostMapping("/{novelId}/click")
+    public Result<Void> incrementClick(@PathVariable Long novelId) {
+        novelService.incrementClick(novelId);
+        return Result.success(null);
+    }
 }

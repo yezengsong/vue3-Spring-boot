@@ -19,3 +19,8 @@ export function getRecommendNovels(novelId, limit = 5) {
 export function getCategoryList() {
   return request.get('/category/list')
 }
+
+// 增加点击量
+export function incrementClick(novelId) {
+  return request.post(`/novel/${novelId}/click`)
+}

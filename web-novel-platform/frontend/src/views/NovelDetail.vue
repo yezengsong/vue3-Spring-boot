@@ -75,7 +75,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { getNovelDetail } from '@/api/novel'
+import { getNovelDetail, incrementClick } from '@/api/novel'
 import { bookmark, unbookmark, getBookmarks } from '@/api/bookmark'
 import { ElMessage } from 'element-plus'
 
@@ -93,6 +93,7 @@ const isBookmarked = computed(() => {
 
 onMounted(async () => {
   await loadNovelDetail()
+  recordClick()
   if (userStore.token) {
     await loadBookmarks()
   }
@@ -107,6 +108,18 @@ async function loadNovelDetail() {
     console.error('加载小说详情失败:', error)
   } finally {
     loading.value = false
+  }
+}
+
+// 记录点击数（使用防抖，避免重复记录）
+const clickRecorded = ref(false)
+async function recordClick() {
+  if (clickRecorded.value) return
+  try {
+    await incrementClick(route.params.novelId)
+    clickRecorded.value = true
+  } catch (error) {
+    console.error('记录点击数失败:', error)
   }
 }
 
