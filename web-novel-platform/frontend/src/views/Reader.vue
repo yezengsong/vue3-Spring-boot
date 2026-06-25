@@ -74,7 +74,7 @@
             <div class="comment-content">{{ comment.content }}</div>
             <div class="comment-actions">
               <el-button text size="small" @click="likeComment(comment)" :class="{ 'liked': comment.isLiked }">
-                <el-icon><ThumbUp /></el-icon>
+                <el-icon><Star v-if="!comment.isLiked" /><StarFilled v-else /></el-icon>
                 {{ comment.likeCount }}
               </el-button>
               <el-button text size="small" @click="showReplyInput(comment)">
@@ -112,7 +112,7 @@
                 <div class="reply-content">{{ reply.content }}</div>
                 <div class="reply-actions-small">
                   <el-button text size="small" @click="likeComment(reply)" :class="{ 'liked': reply.isLiked }">
-                    <el-icon><ThumbUp /></el-icon>
+                    <el-icon><Star v-if="!reply.isLiked" /><StarFilled v-else /></el-icon>
                     {{ reply.likeCount }}
                   </el-button>
                 </div>
@@ -131,6 +131,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { getChapterContent, getChapters } from '@/api/chapter'
 import { getComments, createComment, replyComment, likeComment as apiLikeComment, unlikeComment as apiUnlikeComment } from '@/api/comment'
 import { ElMessage } from 'element-plus'
+import { Star, StarFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -551,11 +552,11 @@ function formatTime(time) {
 }
 
 .comment-actions .el-button.liked {
-  color: #409eff;
+  color: #f56c6c;
 }
 
 .comment-actions .el-button.liked .el-icon {
-  color: #409eff;
+  color: #f56c6c;
 }
 
 .comment-actions .el-button .el-icon {
@@ -563,7 +564,7 @@ function formatTime(time) {
 }
 
 .reply-actions-small .el-button.liked {
-  color: #409eff;
+  color: #f56c6c;
 }
 
 .reply-actions-small .el-button {
